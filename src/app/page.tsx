@@ -61,34 +61,6 @@ export default async function Home() {
             </div>
           </div>
 
-          <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                Next.js 15
-              </h3>
-              <p className="text-gray-600">
-                React framework với App Router
-              </p>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                Bun Runtime
-              </h3>
-              <p className="text-gray-600">
-                JavaScript runtime nhanh và hiệu quả
-              </p>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                Prisma ORM
-              </h3>
-              <p className="text-gray-600">
-                Database toolkit cho TypeScript
-              </p>
-            </div>
-          </div>
 
           {/* Quick Actions */}
           <div className="mt-8">

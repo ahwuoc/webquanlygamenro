@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -23,15 +23,23 @@ interface RewardSelectorProps {
 
 export default function RewardSelector({ rewards, onRewardsChange }: RewardSelectorProps) {
     const [itemTemplates, setItemTemplates] = useState<any[]>([]);
+    const [types, setTypes] = useState<{ id: number; NAME: string }[]>([]);
+    const [typeMap, setTypeMap] = useState<Record<number, string>>({});
+    const [itemFilter, setItemFilter] = useState<string>("");
+    const [typeFilter, setTypeFilter] = useState<string>("all"); // 'all' or TYPE number as string
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         const fetchItemTemplates = async () => {
             try {
-                const response = await fetch('/api/items');
+                const response = await fetch('/api/items?limit=1000');
                 if (response.ok) {
                     const data = await response.json();
                     setItemTemplates(data.items || []);
+                    setTypes(data.types || []);
+                    const map: Record<number, string> = {};
+                    (data.types || []).forEach((t: { id: number; NAME: string }) => { map[t.id] = t.NAME; });
+                    setTypeMap(map);
                 }
             } catch (error) {
                 console.error('Error fetching item templates:', error);
@@ -43,9 +51,31 @@ export default function RewardSelector({ rewards, onRewardsChange }: RewardSelec
         fetchItemTemplates();
     }, []);
 
+    // Build unique TYPE list and filtered items
+    const uniqueTypes = useMemo(() => {
+        if (types.length > 0) return types.map(t => t.id);
+        const s = new Set<number>();
+        for (const it of itemTemplates) {
+            if (typeof it.TYPE === 'number') s.add(it.TYPE);
+        }
+        return Array.from(s).sort((a, b) => a - b);
+    }, [types, itemTemplates]);
+
+    const filteredItems = useMemo(() => {
+        const f = (itemFilter || '').trim().toLowerCase();
+        const typeSel = typeFilter !== 'all' ? parseInt(typeFilter) : undefined;
+        return itemTemplates.filter((it) => {
+            if (typeSel !== undefined && it.TYPE !== typeSel) return false;
+            if (!f) return true;
+            const byName = it.NAME?.toLowerCase().includes(f);
+            const byId = String(it.id).includes(f);
+            return byName || byId;
+        });
+    }, [itemTemplates, itemFilter, typeFilter]);
+
     const addReward = () => {
         const newReward: RewardItem = {
-            item_id: 1, // Default to first item template
+            item_id: (filteredItems[0]?.id ?? itemTemplates[0]?.id ?? 1), // default to first filtered or first item
             quantity: 1,
             drop_rate: 0.1
         };
@@ -94,10 +124,35 @@ export default function RewardSelector({ rewards, onRewardsChange }: RewardSelec
                     </Button>
                 </CardTitle>
                 <CardDescription>
-                    Thiết lập các vật phẩm mà boss sẽ rơi khi bị tiêu diệt
+                    Thiết lập các vật phẩm mà boss sẽ rơi khi bị tiêu diệt. Không giới hạn số lượng dòng phần thưởng.
                 </CardDescription>
             </CardHeader>
             <CardContent>
+                {/* Global filter for items list */}
+                <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                        <Label className="text-xs text-gray-600">Lọc theo tên hoặc ID vật phẩm</Label>
+                        <Input
+                            value={itemFilter}
+                            onChange={(e) => setItemFilter(e.target.value)}
+                            placeholder="Ví dụ: 12 hoặc 'găng'"
+                        />
+                    </div>
+                    <div>
+                        <Label className="text-xs text-gray-600">Lọc theo loại (TYPE)</Label>
+                        <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v)}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Tất cả" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Tất cả</SelectItem>
+                                {uniqueTypes.map((t) => (
+                                    <SelectItem key={t} value={String(t)}>Type {t}{typeMap[t] ? ` - ${typeMap[t]}` : ''}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
                 {rewards.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">
                         <p>Chưa có phần thưởng nào</p>
@@ -131,9 +186,9 @@ export default function RewardSelector({ rewards, onRewardsChange }: RewardSelec
                                                 <SelectValue placeholder="Chọn vật phẩm" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                {itemTemplates.map((item) => (
+                                                {filteredItems.map((item) => (
                                                     <SelectItem key={item.id} value={item.id.toString()}>
-                                                        {item.NAME} (ID: {item.id})
+                                                        {item.NAME} (ID: {item.id}) • Type {item.TYPE}{typeMap[item.TYPE] ? ` - ${typeMap[item.TYPE]}` : ''}
                                                     </SelectItem>
                                                 ))}
                                             </SelectContent>

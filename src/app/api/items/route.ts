@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
             where.TYPE = parseInt(type);
         }
 
-        const [items, totalCount] = await Promise.all([
+        const [items, totalCount, types] = await Promise.all([
             prisma.item_template.findMany({
                 where,
                 skip: offset,
@@ -41,10 +41,15 @@ export async function GET(request: NextRequest) {
                 },
             }),
             prisma.item_template.count({ where }),
+            prisma.type_item.findMany({
+                select: { id: true, NAME: true },
+                orderBy: { id: 'asc' },
+            }),
         ]);
 
         return NextResponse.json({
             items,
+            types,
             pagination: {
                 page,
                 limit,

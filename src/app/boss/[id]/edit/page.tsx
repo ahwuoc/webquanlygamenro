@@ -236,7 +236,7 @@ export default function EditBossPage({ params }: EditBossPageProps) {
     if (isLoading) {
         return (
             <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-                <div className="max-w-4xl mx-auto">
+                <div className="w-full">
                     <div className="flex items-center justify-center h-64">
                         <div className="text-lg">Đang tải dữ liệu...</div>
                     </div>
@@ -248,7 +248,7 @@ export default function EditBossPage({ params }: EditBossPageProps) {
     if (!boss) {
         return (
             <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-                <div className="max-w-4xl mx-auto">
+                <div className="w-full">
                     <div className="flex items-center justify-center h-64">
                         <div className="text-lg text-red-600">Không tìm thấy boss</div>
                     </div>
@@ -259,7 +259,7 @@ export default function EditBossPage({ params }: EditBossPageProps) {
 
     return (
         <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-4xl mx-auto">
+            <div className="w-full">
                 {/* Header */}
                 <div className="mb-8">
                     <div className="flex items-center justify-between">
