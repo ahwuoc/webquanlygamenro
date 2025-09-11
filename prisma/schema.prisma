@@ -1,0 +1,603 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model account {
+  id               Int              @id @default(autoincrement())
+  username         String           @unique(map: "username") @db.VarChar(20)
+  password         String           @db.VarChar(100)
+  create_time      DateTime?        @default(now()) @db.Timestamp(0)
+  update_time      DateTime?        @default(now()) @db.Timestamp(0)
+  ban              Int              @default(0) @db.SmallInt
+  point_post       Int              @default(0)
+  last_post        Int              @default(0)
+  role             Int              @default(-1)
+  is_admin         Boolean          @default(false)
+  last_time_login  DateTime         @default(now()) @db.Timestamp(0)
+  last_time_logout DateTime         @default(now()) @db.Timestamp(0)
+  last_time_off    DateTime         @default(now()) @db.Timestamp(0)
+  ip_address       String?          @db.VarChar(50)
+  active           Int              @default(0)
+  mkc2             Int              @default(0)
+  thoi_vang        Int              @default(0)
+  server_login     Int              @default(-1)
+  bd_player        Float?           @default(1)
+  is_gift_box      Boolean?         @default(false)
+  gift_time        String?          @default("0") @db.VarChar(255)
+  reward           String?          @db.LongText
+  tongnap          Int              @default(0)
+  coin             Int              @default(0)
+  vnd              Int?             @default(0)
+  recaf            Int?
+  gioithieu        Int              @default(0)
+  mtvgt            Int              @default(0)
+  vip1             Int              @default(0)
+  vip2             Int              @default(0)
+  vip3             Int              @default(0)
+  vip4             Int              @default(0)
+  vip5             Int              @default(0)
+  vip6             Int              @default(0)
+  admin            Int              @default(0)
+  mabaove          String?          @db.VarChar(255)
+  gmail            String?          @db.VarChar(100)
+  tichdiem         Int              @default(0)
+  xacminh          Int              @default(0)
+  thoigian_xacminh Int              @default(0)
+  del_pass2        DateTime?        @db.Timestamp(0)
+  nrog8            Int              @default(0)
+  mocnap           Int              @default(0)
+  email            String?          @db.VarChar(255)
+  alichsunaptien   alichsunaptien[]
+}
+
+model alichsunaptien {
+  id         Int                    @id @default(autoincrement())
+  user_id    Int
+  amount     Int
+  bank_name  String                 @db.VarChar(255)
+  status     alichsunaptien_status? @default(pending)
+  created_at DateTime               @default(now()) @db.Timestamp(0)
+  account    account                @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "alichsunaptien_ibfk_1")
+
+  @@index([user_id], map: "user_id")
+}
+
+model archive_template {
+  id    Int    @id
+  info1 String @db.Text
+  info2 String @db.Text
+  money Int
+
+  @@index([id], map: "id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model array_head_2_frames {
+  id   Int    @id @default(autoincrement())
+  data String @db.Text
+}
+
+model atintuc {
+  id         Int      @id @default(autoincrement())
+  title      String   @db.VarChar(255)
+  content    String   @db.Text
+  created_at DateTime @default(now()) @db.Timestamp(0)
+}
+
+model bg_item_template {
+  id       Int @id
+  image_id Int
+  layer    Int
+  dx       Int
+  dy       Int
+}
+
+model caption {
+  id   Int    @id @default(autoincrement())
+  NAME String @db.VarChar(255)
+}
+
+model clan_sv1 {
+  id             Int      @id
+  NAME           String   @db.VarChar(255)
+  slogan         String   @default("") @db.VarChar(255)
+  img_id         Int      @default(0)
+  power_point    BigInt   @default(0)
+  max_member     Int      @default(10) @db.SmallInt
+  clan_point     Int      @default(0)
+  LEVEL          Int      @default(1)
+  members        String   @db.Text
+  create_time    DateTime @default(now()) @db.Timestamp(0)
+  createtimeLong String   @db.Text
+  DataGas        String   @db.Text
+}
+
+model clan_sv2 {
+  id          Int      @id
+  NAME        String   @db.VarChar(255)
+  slogan      String   @default("") @db.VarChar(255)
+  img_id      Int      @default(0)
+  power_point BigInt   @default(0)
+  max_member  Int      @default(10) @db.SmallInt
+  clan_point  Int      @default(0)
+  LEVEL       Int      @default(1)
+  members     String   @db.Text
+  create_time DateTime @default(now()) @db.Timestamp(0)
+}
+
+model dhvt_template {
+  id        Int    @id @default(autoincrement())
+  cup       String @default("0") @db.VarChar(999)
+  time      String @default("0") @db.VarChar(999)
+  gem       Int    @default(0)
+  gold      Int    @default(0)
+  min_start Int    @default(0)
+  min_limit Int    @default(0)
+}
+
+model flag_bag {
+  id        Int    @id
+  icon_data String @db.VarChar(255)
+  NAME      String @default("flag_bag") @db.VarChar(255)
+  gold      Int    @default(-1)
+  gem       Int    @default(-1)
+  icon_id   Int    @default(0)
+}
+
+model giftcode {
+  id         Int     @id
+  code       String  @default("") @db.VarChar(200)
+  type       Int     @default(0) @db.TinyInt
+  Delete     Boolean @default(true)
+  limit      Int     @default(0)
+  listUser   String  @db.LongText
+  listItem   String  @default("[]") @db.VarChar(5000)
+  bagCount   Boolean @default(true)
+  itemoption String  @db.Text
+  active     Int     @default(0)
+}
+
+model head_avatar {
+  head_id   Int @id
+  avatar_id Int
+}
+
+model history_event {
+  id      Int       @id @default(autoincrement())
+  name    String?   @db.VarChar(255)
+  point   Int?      @default(0)
+  created DateTime? @db.Date
+}
+
+model history_gift {
+  id        Int     @id @default(autoincrement())
+  player_id Int?
+  name_gift String? @db.Text
+}
+
+model history_gold {
+  id   Int     @id @default(autoincrement())
+  name String? @db.VarChar(255)
+  gold Int?
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model history_receive_goldbar {
+  player_id           Int
+  player_name         String   @db.VarChar(255)
+  gold_before_receive Int
+  gold_after_receive  Int
+  gold_bag_before     Int
+  gold_bag_after      Int
+  gold_box_before     Int
+  gold_box_after      Int
+  time_receive        DateTime @default(now()) @db.DateTime(0)
+
+  @@index([player_id], map: "player_id")
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model history_transaction {
+  player_1          String   @db.VarChar(255)
+  player_2          String   @db.VarChar(255)
+  item_player_1     String   @db.Text
+  item_player_2     String   @db.Text
+  bag_1_before_tran String   @db.Text
+  bag_2_before_tran String   @db.Text
+  bag_1_after_tran  String   @db.Text
+  bag_2_after_tran  String   @db.Text
+  time_tran         DateTime @default(now()) @db.Timestamp(0)
+
+  @@ignore
+}
+
+model img_by_name {
+  id      Int    @id @default(autoincrement())
+  NAME    String @unique(map: "NAME") @db.VarChar(55)
+  n_frame Int
+}
+
+model intrinsic {
+  id           Int    @id
+  NAME         String @db.VarChar(255)
+  param_from_1 Int    @default(0)
+  param_to_1   Int    @default(0)
+  param_from_2 Int    @default(0)
+  param_to_2   Int    @default(0)
+  icon         Int    @default(0)
+  gender       Int    @default(3) @db.SmallInt
+}
+
+model item_option_template {
+  id   Int    @id
+  NAME String @db.VarChar(255)
+}
+
+model item_shop {
+  id          Int       @id @default(autoincrement())
+  tab_id      Int
+  temp_id     Int
+  is_new      Boolean   @default(true)
+  is_sell     Boolean   @default(true)
+  type_sell   Int?      @default(1)
+  cost        Int?      @default(0)
+  icon_spec   Int?      @default(0)
+  create_time DateTime? @default(now()) @db.Timestamp(0)
+
+  @@index([tab_id], map: "tab_id")
+  @@index([temp_id], map: "temp_id")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model item_shop_option {
+  item_shop_id Int
+  option_id    Int
+  param        Int
+
+  @@index([item_shop_id], map: "item_shop_id")
+  @@index([option_id], map: "option_id")
+  @@ignore
+}
+
+model item_template {
+  id            Int     @id
+  TYPE          Int
+  gender        Int     @db.SmallInt
+  NAME          String  @db.VarChar(255)
+  description   String  @db.VarChar(255)
+  icon_id       Int
+  part          Int
+  is_up_to_up   Boolean
+  power_require Int
+  gold          Int     @default(0)
+  gem           Int     @default(0)
+  head          Int     @default(-1)
+  body          Int     @default(-1)
+  leg           Int     @default(-1)
+  ruby          Int
+}
+
+model map_template {
+  id         Int    @id
+  NAME       String @db.VarChar(55)
+  zones      Int    @default(1)
+  max_player Int    @default(15)
+  data       String @default("[]") @db.VarChar(1000)
+  type       Int    @default(1)
+  planet_id  Int    @default(1)
+  bg_type    Int    @default(1)
+  tile_id    Int    @default(1)
+  bg_id      Int    @default(1)
+  waypoints  String @db.Text
+  mobs       String @db.Text
+  npcs       String @db.Text
+}
+
+model mob_template {
+  id                Int    @id
+  TYPE              Int
+  NAME              String @db.VarChar(50)
+  hp                Int
+  range_move        Int    @db.SmallInt
+  speed             Int    @db.SmallInt
+  dart_type         Int    @db.SmallInt
+  percent_dame      Int    @default(5) @db.SmallInt
+  percent_tiem_nang Int    @default(50) @db.SmallInt
+}
+
+model nclass {
+  id   Int    @id
+  NAME String @db.VarChar(50)
+}
+
+model npc_template {
+  id     Int    @id
+  NAME   String @db.VarChar(50)
+  head   Int
+  body   Int
+  leg    Int
+  avatar Int?   @default(0)
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model part {
+  id   Int
+  TYPE Int
+  DATA String @db.Text
+
+  @@ignore
+}
+
+model player {
+  id                      Int      @id @default(autoincrement())
+  account_id              Int?     @unique(map: "account_id")
+  name                    String   @db.VarChar(20)
+  head                    Int      @default(102)
+  gender                  Int
+  have_tennis_space_ship  Boolean? @default(false)
+  clan_id_sv1             Int      @default(-1)
+  clan_id_sv2             Int      @default(-1)
+  data_inventory          String   @db.Text
+  data_location           String   @db.Text
+  data_point              String   @db.Text
+  data_magic_tree         String   @db.Text
+  items_body              String   @db.Text
+  items_bag               String   @db.Text
+  items_box               String   @db.Text
+  items_box_lucky_round   String   @db.Text
+  friends                 String   @db.Text
+  enemies                 String   @db.Text
+  data_intrinsic          String   @db.Text
+  data_item_time          String   @db.Text
+  data_item_time_sieu_cap String   @db.Text
+  data_task               String   @db.Text
+  data_mabu_egg           String   @db.Text
+  data_charm              String   @db.Text
+  skills                  String   @db.Text
+  skills_shortcut         String   @db.Text
+  pet                     String   @db.Text
+  data_black_ball         String   @db.Text
+  data_side_task          String   @db.Text
+  create_time             DateTime @default(now()) @db.Timestamp(0)
+  violate                 Int      @default(0)
+  pointPvp                Int?     @default(0)
+  NguHanhSonPoint         Int?     @default(0)
+  data_card               String   @default("[]") @db.VarChar(1000)
+  bill_data               String   @db.Text
+  thoi_vang               Int      @default(0)
+  PointBoss               Int
+  dataArchiverment        String   @default("[[-1,0]]") @db.VarChar(1000)
+  ResetSkill              Int
+  PointCauCa              Int
+  LastDoanhTrai           BigInt
+  DataDay                 String   @default("[0,0,0,0,0,0,0]") @db.VarChar(1000)
+  DataOnline              String   @default("[0,0,0,0,0,0,0,0,0,0,0]") @db.VarChar(1000)
+  DataNap                 String   @default("[0,0,0,0,0,0,0]") @db.VarChar(1000)
+  RuongItemC2             Int
+  CuongNoC2               Int
+  BoHuyetC2               Int
+  BoKhiC2                 Int
+  DaBaoVe                 Int
+  DaNguSac                Int
+  dothanlinh              Int
+  Binh_can_data           String   @default("[0,0,0,0]") @db.VarChar(1000)
+  pointsb                 Int      @default(0)
+  point_gapthu            Int      @default(0)
+  data_offtrain           String   @default("'[0,0]'") @db.VarChar(100)
+  dhtime                  String   @default("[0,0]") @db.VarChar(100)
+  diemdanh                String   @default("[0,0]") @db.VarChar(100)
+  point_vnd               Int      @default(0)
+  data_diem               String   @default("[0,0,0]") @db.VarChar(100)
+  Bkttutien               String   @default("[0,0,0]") @db.VarChar(1000)
+  Captutien               Int      @default(0)
+  Exptutien               BigInt   @default(0)
+  Bkt_Tu_Ma               String   @default("[]") @db.VarChar(1000)
+  BktDLDL                 String   @default("[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]") @db.VarChar(1000)
+  ChuyenSinh              Int      @default(0)
+  Thu_TrieuHoi            String   @default("[-1]") @db.VarChar(1000)
+  capboss                 Int      @default(0)
+  data_cai_trang_send     String   @db.Text
+  checkNhanQua            Int      @default(1)
+  diemdanhsk              String   @default("[0,0]") @db.VarChar(100)
+  Nuoc_mia                String   @default("[0,0,0]") @db.VarChar(1000)
+  kemtraicay              Int      @default(0)
+  nuocmia                 Int      @default(0)
+  isbienhinh              Int      @default(0)
+  Trung_thu               String   @default("[0,0,0,0,0]") @db.VarChar(1000)
+  rank_sieu_hang          Int      @default(0)
+  thankhi                 Int      @default(0)
+  blackballdata           Int      @default(0)
+}
+
+model radar {
+  id            Int     @id
+  iconId        Int?    @default(0)
+  rank          Int?    @default(0) @db.TinyInt
+  max           Int?    @default(60)
+  type          Int?    @default(0)
+  template      Int?    @default(1)
+  body          String? @default("[]") @db.VarChar(500)
+  name          String? @default("") @db.VarChar(500)
+  info          String? @default("") @db.VarChar(2000)
+  options       String? @default("[]") @db.VarChar(2000)
+  require       Int?    @default(-1)
+  require_level Int?    @default(0)
+  aura_id       Int?    @default(-1) @db.SmallInt
+}
+
+model shop {
+  id        Int     @id @default(autoincrement())
+  npc_id    Int
+  tag_name  String? @db.VarChar(50)
+  type_shop Int?
+
+  @@index([npc_id], map: "npc_id")
+}
+
+model shop_ky_gui {
+  id         Int    @id
+  player_id  Int
+  tab        Int
+  item_id    Int
+  ruby       Int
+  gem        Int
+  quantity   Int
+  itemOption String @db.Text
+  isUpTop    Int
+  isBuy      Int
+  createTime BigInt
+}
+
+model side_task_template {
+  id            Int    @id
+  NAME          String @db.VarChar(255)
+  max_count_lv1 String @db.VarChar(255)
+  max_count_lv2 String @db.VarChar(255)
+  max_count_lv3 String @db.VarChar(255)
+  max_count_lv4 String @db.VarChar(255)
+  max_count_lv5 String @db.VarChar(255)
+}
+
+model skill_template {
+  nclass_id     Int
+  id            Int
+  NAME          String @db.VarChar(50)
+  max_point     Int    @default(7) @db.SmallInt
+  mana_use_type Int    @db.SmallInt
+  TYPE          Int    @db.SmallInt
+  icon_id       Int
+  dam_info      String @db.VarChar(255)
+  slot          Int
+  skills        String @db.Text
+
+  @@id([nclass_id, id])
+}
+
+model small_version {
+  id Int @id
+  x1 Int
+  x2 Int
+  x3 Int
+  x4 Int
+}
+
+model tab_shop {
+  id      Int    @id @default(autoincrement())
+  shop_id Int
+  NAME    String @db.VarChar(50)
+
+  @@index([shop_id], map: "shop_id")
+}
+
+model task_main_template {
+  id     Int    @id
+  NAME   String @db.VarChar(255)
+  detail String @db.VarChar(255)
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model task_sub_template {
+  task_main_id Int
+  NAME         String @db.VarChar(255)
+  max_count    Int    @default(-1)
+  notify       String @default("") @db.VarChar(255)
+  npc_id       Int    @default(-1)
+  map          Int
+
+  @@index([task_main_id], map: "task_main_id")
+  @@ignore
+}
+
+model type_item {
+  id   Int    @id @default(autoincrement())
+  NAME String @default("") @db.VarChar(50)
+}
+
+model type_map {
+  id   Int    @id
+  NAME String @db.VarChar(55)
+}
+
+model type_sell_item_shop {
+  id   Int    @id @default(autoincrement())
+  NAME String @db.VarChar(50)
+}
+
+model boss_outfits {
+  id      Int    @id @default(autoincrement())
+  boss_id Int
+  item_id Int    @db.SmallInt
+  bosses  bosses @relation(fields: [boss_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "boss_outfits_ibfk_1")
+
+  @@index([boss_id], map: "boss_id")
+}
+
+model boss_rewards {
+  id        Int    @id @default(autoincrement())
+  boss_id   Int
+  item_id   Int    @db.SmallInt
+  quantity  Int
+  drop_rate Float
+  bosses    bosses @relation(fields: [boss_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "boss_rewards_ibfk_1")
+
+  @@index([boss_id], map: "boss_id")
+}
+
+model boss_skills {
+  id          Int    @id @default(autoincrement())
+  boss_id     Int
+  skill_id    Int
+  skill_level Int    @db.TinyInt
+  cooldown    Int
+  bosses      bosses @relation(fields: [boss_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "boss_skills_ibfk_1")
+
+  @@index([boss_id], map: "boss_id")
+}
+
+model boss_texts {
+  id            Int                  @id @default(autoincrement())
+  boss_id       Int
+  text_type     boss_texts_text_type
+  text_content  String               @db.Text
+  display_order Int?                 @default(0)
+  bosses        bosses               @relation(fields: [boss_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "boss_texts_ibfk_1")
+
+  @@index([boss_id], map: "boss_id")
+}
+
+model bosses {
+  id                          Int            @id
+  name                        String         @db.VarChar(100)
+  gender                      Int            @db.TinyInt
+  dame                        Float
+  hp_json                     String         @db.LongText
+  map_join_json               String         @db.LongText
+  seconds_rest                Int?           @default(0)
+  type_appear                 Int?           @default(0) @db.TinyInt
+  bosses_appear_together_json String?        @db.LongText
+  is_active                   Boolean?       @default(true)
+  created_at                  DateTime       @default(now()) @db.Timestamp(0)
+  updated_at                  DateTime       @default(now()) @db.Timestamp(0)
+  boss_outfits                boss_outfits[]
+  boss_rewards                boss_rewards[]
+  boss_skills                 boss_skills[]
+  boss_texts                  boss_texts[]
+}
+
+enum alichsunaptien_status {
+  pending
+  approved
+  rejected
+}
+
+enum boss_texts_text_type {
+  start
+  middle
+  end
+}
