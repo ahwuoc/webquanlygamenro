@@ -27,29 +27,32 @@ export default function RewardSelector({ rewards, onRewardsChange }: RewardSelec
     const [typeMap, setTypeMap] = useState<Record<number, string>>({});
     const [itemFilter, setItemFilter] = useState<string>("");
     const [typeFilter, setTypeFilter] = useState<string>("all"); // 'all' or TYPE number as string
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isWarm, setIsWarm] = useState(false);
+    const [cachedAt, setCachedAt] = useState<number | null>(null);
 
-    useEffect(() => {
-        const fetchItemTemplates = async () => {
-            try {
-                const response = await fetch('/api/items?limit=1000');
-                if (response.ok) {
-                    const data = await response.json();
-                    setItemTemplates(data.items || []);
-                    setTypes(data.types || []);
-                    const map: Record<number, string> = {};
-                    (data.types || []).forEach((t: { id: number; NAME: string }) => { map[t.id] = t.NAME; });
-                    setTypeMap(map);
-                }
-            } catch (error) {
-                console.error('Error fetching item templates:', error);
-            } finally {
-                setIsLoading(false);
+    // Only fetch items after user warms cache to avoid lag
+    const warmUpCache = async () => {
+        setIsLoading(true);
+        try {
+            // Warm cache and retrieve all at once
+            const response = await fetch('/api/items?refresh=1&limit=all');
+            if (response.ok) {
+                const data = await response.json();
+                setItemTemplates(data.items || []);
+                setTypes(data.types || []);
+                const map: Record<number, string> = {};
+                (data.types || []).forEach((t: { id: number; NAME: string }) => { map[t.id] = t.NAME; });
+                setTypeMap(map);
+                setIsWarm(true);
+                if (data.pagination?.cachedAt) setCachedAt(data.pagination.cachedAt);
             }
-        };
-
-        fetchItemTemplates();
-    }, []);
+        } catch (error) {
+            console.error('Error warming items cache:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     // Build unique TYPE list and filtered items
     const uniqueTypes = useMemo(() => {
@@ -102,12 +105,12 @@ export default function RewardSelector({ rewards, onRewardsChange }: RewardSelec
         return item ? item.NAME : `Item #${itemId}`;
     };
 
-    if (isLoading) {
+    if (isLoading && !isWarm) {
         return (
             <Card>
                 <CardHeader>
                     <CardTitle>Phần Thưởng Boss</CardTitle>
-                    <CardDescription>Đang tải danh sách vật phẩm...</CardDescription>
+                    <CardDescription>Đang nạp danh sách vật phẩm vào bộ nhớ đệm...</CardDescription>
                 </CardHeader>
             </Card>
         );
@@ -118,16 +121,32 @@ export default function RewardSelector({ rewards, onRewardsChange }: RewardSelec
             <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                     Phần Thưởng Boss
-                    <Button onClick={addReward} size="sm" className="flex items-center gap-2">
+                    <div className="flex items-center gap-2">
+                        {!isWarm && (
+                            <Button type="button" onClick={warmUpCache} variant="secondary" size="sm" disabled={isLoading}>
+                                {isLoading ? 'Đang tải...' : 'Tải danh sách item vào cache'}
+                            </Button>
+                        )}
+                        <Button onClick={addReward} size="sm" className="flex items-center gap-2" disabled={!isWarm}>
                         <Plus className="h-4 w-4" />
                         Thêm Phần Thưởng
-                    </Button>
+                        </Button>
+                    </div>
                 </CardTitle>
                 <CardDescription>
                     Thiết lập các vật phẩm mà boss sẽ rơi khi bị tiêu diệt. Không giới hạn số lượng dòng phần thưởng.
                 </CardDescription>
             </CardHeader>
             <CardContent>
+                {isWarm && (
+                    <div className="mb-3 text-xs text-gray-600 flex flex-wrap gap-3">
+                        <span>Đã nạp: <strong>{itemTemplates.length}</strong> items</span>
+                        <span>Loại (TYPE): <strong>{types.length}</strong></span>
+                        {cachedAt && (
+                            <span>Cập nhật: {new Date(cachedAt).toLocaleString()}</span>
+                        )}
+                    </div>
+                )}
                 {/* Global filter for items list */}
                 <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div>
@@ -136,11 +155,12 @@ export default function RewardSelector({ rewards, onRewardsChange }: RewardSelec
                             value={itemFilter}
                             onChange={(e) => setItemFilter(e.target.value)}
                             placeholder="Ví dụ: 12 hoặc 'găng'"
+                            disabled={!isWarm}
                         />
                     </div>
                     <div>
                         <Label className="text-xs text-gray-600">Lọc theo loại (TYPE)</Label>
-                        <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v)}>
+                        <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v)} disabled={!isWarm}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Tất cả" />
                             </SelectTrigger>
@@ -156,7 +176,11 @@ export default function RewardSelector({ rewards, onRewardsChange }: RewardSelec
                 {rewards.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">
                         <p>Chưa có phần thưởng nào</p>
-                        <p className="text-sm">Nhấn "Thêm Phần Thưởng" để bắt đầu</p>
+                        {!isWarm ? (
+                            <p className="text-sm">Vui lòng bấm "Tải danh sách item vào cache" trước khi thêm phần thưởng</p>
+                        ) : (
+                            <p className="text-sm">Nhấn "Thêm Phần Thưởng" để bắt đầu</p>
+                        )}
                     </div>
                 ) : (
                     <div className="space-y-4">
@@ -181,6 +205,7 @@ export default function RewardSelector({ rewards, onRewardsChange }: RewardSelec
                                         <Select
                                             value={reward.item_id.toString()}
                                             onValueChange={(value) => updateReward(index, 'item_id', parseInt(value))}
+                                            disabled={!isWarm}
                                         >
                                             <SelectTrigger>
                                                 <SelectValue placeholder="Chọn vật phẩm" />
@@ -209,6 +234,7 @@ export default function RewardSelector({ rewards, onRewardsChange }: RewardSelec
                                             min="1"
                                             value={reward.quantity}
                                             onChange={(e) => updateReward(index, 'quantity', parseInt(e.target.value) || 1)}
+                                            disabled={!isWarm}
                                         />
                                     </div>
 
@@ -223,6 +249,7 @@ export default function RewardSelector({ rewards, onRewardsChange }: RewardSelec
                                             step="0.1"
                                             value={reward.drop_rate * 100}
                                             onChange={(e) => updateReward(index, 'drop_rate', parseFloat(e.target.value) / 100 || 0)}
+                                            disabled={!isWarm}
                                         />
                                         <p className="text-xs text-gray-500">
                                             {reward.drop_rate > 0 ? `${(reward.drop_rate * 100).toFixed(1)}%` : '0%'}

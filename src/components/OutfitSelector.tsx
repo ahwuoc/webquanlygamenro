@@ -6,11 +6,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
-interface ItemTemplate {
-    id: number;
-    NAME: string;
-}
+interface ItemTemplate { id: number; NAME: string; TYPE?: number; }
 
 interface OutfitSelectorProps {
     value: string;
@@ -20,29 +18,33 @@ interface OutfitSelectorProps {
 
 export default function OutfitSelector({ value, onChange, error }: OutfitSelectorProps) {
     const [items, setItems] = useState<ItemTemplate[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
+    const [isWarm, setIsWarm] = useState(false);
+    const [cachedAt, setCachedAt] = useState<number | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedOutfitId, setSelectedOutfitId] = useState<number | null>(null);
 
-    useEffect(() => {
-        const fetchOutfits = async () => {
-            try {
-                // Fetch items of TYPE = 5 (outfits)
-                const response = await fetch('/api/items?type=5&limit=1000');
-                if (response.ok) {
-                    const data = await response.json();
-                    const boiled = (data.items || []).map((it: any) => ({ id: it.id, NAME: it.NAME }));
-                    setItems(boiled);
-                }
-            } catch (error) {
-                console.error('Error fetching outfits:', error);
-            } finally {
-                setLoading(false);
+    const warmUpCache = async () => {
+        setLoading(true);
+        try {
+            // Warm cache and load all items
+            const response = await fetch('/api/items?refresh=1&limit=all');
+            if (response.ok) {
+                const data = await response.json();
+                // Filter TYPE = 5 (outfits) on client
+                const boiled = (data.items || [])
+                    .filter((it: any) => it.TYPE === 5)
+                    .map((it: any) => ({ id: it.id, NAME: it.NAME, TYPE: it.TYPE }));
+                setItems(boiled);
+                setIsWarm(true);
+                if (data.pagination?.cachedAt) setCachedAt(data.pagination.cachedAt);
             }
-        };
-
-        fetchOutfits();
-    }, []);
+        } catch (error) {
+            console.error('Error warming outfits cache:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
         // Parse initial value - expect a single outfit ID
@@ -71,15 +73,15 @@ export default function OutfitSelector({ value, onChange, error }: OutfitSelecto
         item.NAME.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    if (loading) {
+    if (loading && !isWarm) {
         return (
             <Card>
                 <CardHeader>
                     <CardTitle>Chọn Trang Phục</CardTitle>
-                    <CardDescription>Đang tải danh sách trang phục...</CardDescription>
+                    <CardDescription>Đang nạp trang phục (TYPE=5) vào cache...</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="text-center py-4">Loading...</div>
+                    <div className="text-center py-4">Đang tải...</div>
                 </CardContent>
             </Card>
         );
@@ -88,7 +90,14 @@ export default function OutfitSelector({ value, onChange, error }: OutfitSelecto
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Chọn Trang Phục</CardTitle>
+                <CardTitle className="flex items-center justify-between">
+                    Chọn Trang Phục
+                    {!isWarm && (
+                        <Button type="button" size="sm" variant="secondary" onClick={warmUpCache} disabled={loading}>
+                            {loading ? 'Đang tải...' : 'Tải danh sách item vào cache'}
+                        </Button>
+                    )}
+                </CardTitle>
                 <CardDescription>
                     Chọn trang phục cho boss (chỉ được chọn 1)
                     {selectedOutfitId && (
@@ -100,12 +109,18 @@ export default function OutfitSelector({ value, onChange, error }: OutfitSelecto
             </CardHeader>
             <CardContent>
                 <div className="space-y-4">
+                    {isWarm && (
+                        <div className="text-xs text-gray-600">
+                            Đã nạp: <strong>{items.length}</strong> trang phục • {cachedAt ? `Cập nhật: ${new Date(cachedAt).toLocaleString()}` : ''}
+                        </div>
+                    )}
                     {/* Outfit Selection (Items TYPE=5) */}
                     <div className="space-y-2">
                         <Label htmlFor="outfit-select">Trang phục</Label>
                         <Select
                             value={selectedOutfitId?.toString() || ''}
                             onValueChange={handleOutfitSelect}
+                            disabled={!isWarm}
                         >
                             <SelectTrigger>
                                 <SelectValue placeholder="Chọn trang phục cho boss" />
@@ -160,6 +175,7 @@ export default function OutfitSelector({ value, onChange, error }: OutfitSelecto
                             placeholder="Nhập tên trang phục..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
+                            disabled={!isWarm}
                         />
                     </div>
 
