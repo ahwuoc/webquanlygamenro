@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 interface RouteParams {
-    params: {
+    params: Promise<{
         id: string;
-    };
+    }>;
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
@@ -111,7 +111,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         }
 
         // Update boss data
-        const boss = await prisma.bosses.update({
+        await prisma.bosses.update({
             where: { id: bossId },
             data: {
                 name: body.name,
