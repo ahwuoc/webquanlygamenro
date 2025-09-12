@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
-    "start": "next start",
+    "dev": "bunx next dev --turbopack",
+    "build": "bunx prisma db push && bunx prisma generate && bunx next build --turbopack",
+    "start": "bunx next start",
     "lint": "eslint",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
