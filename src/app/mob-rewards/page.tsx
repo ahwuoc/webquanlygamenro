@@ -31,6 +31,7 @@ export default function MobRewardsListPage() {
   const [active, setActive] = useState<'all' | '1' | '0'>('all');
   const [mobs, setMobs] = useState<{ id: number; NAME: string }[]>([]);
   const [items, setItems] = useState<{ id: number; NAME: string }[]>([]);
+  const [optionTemplates, setOptionTemplates] = useState<{ id: number; NAME: string }[]>([]);
   const [loadingMeta, setLoadingMeta] = useState(true);
 
   const fetchData = async () => {
@@ -62,9 +63,10 @@ export default function MobRewardsListPage() {
     const loadMeta = async () => {
       try {
         setLoadingMeta(true);
-        const [mobsRes, itemsRes] = await Promise.all([
+        const [mobsRes, itemsRes, optsRes] = await Promise.all([
           fetch('/api/mobs?limit=all'),
           fetch('/api/items?limit=all'),
+          fetch('/api/item-options'),
         ]);
         if (!cancelled) {
           if (mobsRes.ok) {
@@ -78,6 +80,10 @@ export default function MobRewardsListPage() {
             } else if (Array.isArray(it?.items)) {
               setItems(it.items);
             }
+          }
+          if (optsRes.ok) {
+            const opts = await optsRes.json();
+            if (Array.isArray(opts)) setOptionTemplates(opts);
           }
         }
       } finally {
@@ -100,6 +106,11 @@ export default function MobRewardsListPage() {
     for (const x of items) m.set(x.id, x.NAME);
     return m;
   }, [items]);
+  const optionNameById = useMemo(() => {
+    const m = new Map<number, string>();
+    for (const x of optionTemplates) m.set(x.id, x.NAME);
+    return m;
+  }, [optionTemplates]);
 
   const columns = useMemo(() => [
     { title: 'ID', dataIndex: 'id', width: 80 },
@@ -139,14 +150,24 @@ export default function MobRewardsListPage() {
       if (v === 2) return 'Xayda (2)';
       return String(v);
     } },
-    { title: 'Option', key: 'option', render: (_: any, r: MobRewardRow) => `${r.option_id}:${r.option_level}` },
+    { title: 'Option', key: 'option', render: (_: any, r: MobRewardRow) => {
+      const name = optionNameById.get(r.option_id);
+      return name
+        ? (
+          <div className="flex flex-col">
+            <span>{name}</span>
+            <span className="text-xs text-gray-500">ID: {r.option_id} • Param: {r.option_level}</span>
+          </div>
+        )
+        : `${r.option_id}:${r.option_level}`;
+    } },
     { title: 'Active', dataIndex: 'is_active', render: (v: boolean) => v ? <Tag color="green">Active</Tag> : <Tag>Inactive</Tag> },
     { title: 'Actions', key: 'actions', render: (_: any, r: MobRewardRow) => (
       <div className="flex gap-2">
         <Link href={`/mob-rewards/${r.id}/edit`}>Sửa</Link>
       </div>
     ) },
-  ], [itemNameById, mobNameById]);
+  ], [itemNameById, mobNameById, optionNameById]);
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">

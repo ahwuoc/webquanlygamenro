@@ -34,7 +34,7 @@ interface Props {
 }
 
 // Child component to manage options for a given item
-function OptionsEditor({ control, itemName }: { control: any; itemName: string }) {
+function OptionsEditor({ control, itemName, optionOptions }: { control: any; itemName: string; optionOptions: { label: string; value: string }[] }) {
   const { fields: optionFields, append: appendOpt, remove: removeOpt } = useFieldArray({ control, name: `${itemName}.options` as any });
   return (
     <div className="mt-4">
@@ -48,13 +48,22 @@ function OptionsEditor({ control, itemName }: { control: any; itemName: string }
         pagination={false}
         columns={[
           {
-            title: 'Option ID',
+            title: 'Option',
             render: (_: any, __: any, i: number) => (
               <Controller
                 name={`${itemName}.options.${i}.option_id` as any}
                 control={control}
                 render={({ field }) => (
-                  <InputNumber min={0} value={field.value} onChange={(v) => field.onChange(v)} />
+                  <Select
+                    className="min-w-[220px]"
+                    showSearch
+                    optionFilterProp="label"
+                    value={field.value !== undefined && field.value !== null ? String(field.value) : undefined}
+                    onChange={(val) => field.onChange(parseInt(String(val), 10))}
+                    options={optionOptions}
+                    placeholder="Chọn option"
+                    allowClear
+                  />
                 )}
               />
             ),
@@ -103,6 +112,7 @@ export default function MobRewardAdvancedForm({ value, onSubmit, submitting }: P
 
   const [mobsList, setMobsList] = useState<{ id: number; NAME: string }[]>([]);
   const [itemsList, setItemsList] = useState<{ id: number; NAME: string }[]>([]);
+  const [optionTemplates, setOptionTemplates] = useState<{ id: number; NAME: string }[]>([]);
   const [loadingMeta, setLoadingMeta] = useState(true);
 
   useEffect(() => {
@@ -110,9 +120,10 @@ export default function MobRewardAdvancedForm({ value, onSubmit, submitting }: P
     const loadMeta = async () => {
       try {
         setLoadingMeta(true);
-        const [mobsRes, itemsRes] = await Promise.all([
+        const [mobsRes, itemsRes, optsRes] = await Promise.all([
           fetch("/api/mobs?limit=all"),
           fetch("/api/items?limit=all"),
+          fetch("/api/item-options"),
         ]);
         if (!cancelled) {
           if (mobsRes.ok) {
@@ -123,6 +134,10 @@ export default function MobRewardAdvancedForm({ value, onSubmit, submitting }: P
             const it = await itemsRes.json();
             if (Array.isArray(it)) setItemsList(it);
             else if (Array.isArray(it?.items)) setItemsList(it.items);
+          }
+          if (optsRes.ok) {
+            const opts = await optsRes.json();
+            if (Array.isArray(opts)) setOptionTemplates(opts);
           }
         }
       } finally {
@@ -135,6 +150,7 @@ export default function MobRewardAdvancedForm({ value, onSubmit, submitting }: P
 
   const mobOptions = useMemo(() => mobsList.map(m => ({ label: `${m.NAME} (#${m.id})`, value: String(m.id) })), [mobsList]);
   const itemOptions = useMemo(() => itemsList.map(it => ({ label: `${it.NAME} (#${it.id})`, value: String(it.id) })), [itemsList]);
+  const optionOptions = useMemo(() => optionTemplates.map(op => ({ label: `${op.NAME} (#${op.id})`, value: String(op.id) })), [optionTemplates]);
 
   return (
     <Card>
@@ -301,7 +317,7 @@ export default function MobRewardAdvancedForm({ value, onSubmit, submitting }: P
                       />
                     </div>
                   </div>
-                  <OptionsEditor control={control} itemName={itemName} />
+                  <OptionsEditor control={control} itemName={itemName} optionOptions={optionOptions} />
                 </Card>
               );
             })}
