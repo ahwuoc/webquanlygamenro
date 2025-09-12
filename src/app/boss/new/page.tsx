@@ -8,7 +8,7 @@ import SkillSelector from '@/components/SkillSelector';
 import HPInput from '@/components/HPInput';
 import DurationInput from '@/components/DurationInput';
 import { Card, Form, Row, Col, Typography, Space, Divider } from 'antd';
-import { Button, Input, Select, InputNumber, Switch } from 'antd';
+import { Button, Input, Select, InputNumber, Switch, message } from 'antd';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -45,6 +45,7 @@ const bossSchema = z.object({
 type BossFormData = z.infer<typeof bossSchema>;
 
 export default function NewBossPage() {
+    const [messageApi, contextHolder] = message.useMessage();
     const [genderValue, setGenderValue] = useState('1');
     const [mapJoinJson, setMapJoinJson] = useState('{}');
     const [bossOutfitsJson, setBossOutfitsJson] = useState('[]');
@@ -107,13 +108,16 @@ export default function NewBossPage() {
 
             if (response.ok) {
                 const result = await response.json();
-                window.location.href = `/boss/${result.id}`;
+                messageApi.success('Tạo boss thành công');
+                setTimeout(() => {
+                    window.location.href = `/boss/${result.id}`;
+                }, 400);
             } else {
-                alert('Có lỗi xảy ra khi tạo boss');
+                messageApi.error('Có lỗi xảy ra khi tạo boss');
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('Có lỗi xảy ra khi tạo boss');
+            messageApi.error('Có lỗi xảy ra khi tạo boss');
         } finally {
             setIsSubmitting(false);
         }
@@ -125,6 +129,7 @@ export default function NewBossPage() {
     return (
         <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
             <div className="max-w-5xl mx-auto">
+                {contextHolder}
                 <div className="mb-6 flex items-center justify-between">
                     <div>
                         <Title level={2} style={{ margin: 0 }}>Thêm Boss Mới</Title>

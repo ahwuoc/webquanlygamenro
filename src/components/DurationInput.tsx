@@ -60,17 +60,19 @@ export default function DurationInput({
     }, [value, inputValue, unit]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newValue = e.target.value;
-        setInputValue(newValue);
+        const newValueRaw = e.target.value;
+        setInputValue(newValueRaw);
 
-        const numericValue = parseFloat(newValue) || 0;
-        const seconds = convertDisplayToSeconds(numericValue, unit);
-        console.log('DurationInput - Input change:', { newValue, numericValue, unit, seconds });
+        // Normalize comma to dot for decimal inputs in some locales
+        const normalized = newValueRaw.replace(',', '.');
+        const numericValue = parseFloat(normalized);
+        const seconds = convertDisplayToSeconds(isNaN(numericValue) ? 0 : numericValue, unit);
+        console.log('DurationInput - Input change:', { newValue: newValueRaw, normalized, numericValue, unit, seconds });
         onChange?.(seconds);
     };
 
     const handleUnitChange = (newUnit: TimeUnit) => {
-        const currentNumericValue = parseFloat(inputValue) || 0;
+        const currentNumericValue = parseFloat((inputValue || '0').replace(',', '.')) || 0;
         const currentSeconds = convertDisplayToSeconds(currentNumericValue, unit);
 
         setUnit(newUnit);
@@ -94,20 +96,21 @@ export default function DurationInput({
         <div className="space-y-2">
             <Space.Compact className="w-full">
                 <Input
-                    type="number"
-                    min="0"
-                    step="0.1"
+                    type="text"
+                    inputMode="decimal"
                     value={inputValue}
                     onChange={handleInputChange}
                     placeholder={placeholder}
                     disabled={disabled}
                     className="flex-1"
+                    style={{ flex: 1, minWidth: 0 }}
                 />
                 <Select
                     value={unit}
                     onChange={handleUnitChange}
                     disabled={disabled}
                     className="w-20"
+                    style={{ width: 96 }}
                     options={[
                         { value: 's', label: 'giây' },
                         { value: 'm', label: 'phút' },
@@ -123,7 +126,7 @@ export default function DurationInput({
             )}
 
             {/* Display converted value */}
-            {parseFloat(inputValue) > 0 && (
+            {parseFloat(inputValue.replace(',', '.')) > 0 && (
                 <div className="text-xs text-gray-500">
                     = {value} giây ({getUnitLabel(unit)}: {inputValue})
                 </div>
