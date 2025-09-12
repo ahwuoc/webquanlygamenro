@@ -3,8 +3,8 @@
 import useSWR from 'swr';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { Card } from 'antd';
-import { Button, Checkbox, Input, Modal, Select, Form, message } from 'antd';
+import { Card, Typography, Space, Divider } from 'antd';
+import { Button, Checkbox, Input, Modal, Select, Form, message, Switch } from 'antd';
 import ItemCombobox from '@/components/ItemCombobox';
 import IconSelector from '@/components/IconSelector';
 
@@ -60,8 +60,7 @@ export default function ShopDetailPage() {
 
   // Create Tab
   const [newTabName, setNewTabName] = useState('');
-  const onCreateTab = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onCreateTabFinish = async () => {
     if (!newTabName) return;
     const res = await fetch('/api/shop-tabs', {
       method: 'POST',
@@ -124,8 +123,7 @@ export default function ShopDetailPage() {
   const [isNew, setIsNew] = useState(true);
   const [isSell, setIsSell] = useState(true);
 
-  const onAddItem = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onAddItemFinish = async () => {
     if (!selectedTab || !tempId) return;
     const res = await fetch('/api/shop-items', {
       method: 'POST',
@@ -252,13 +250,14 @@ export default function ShopDetailPage() {
             ))}
           </div>
 
-          <form className="flex items-end gap-3" onSubmit={onCreateTab}>
-            <div className="w-64">
-              <label htmlFor="new_tab" className="block text-sm font-medium mb-1">Tên tab mới</label>
-              <Input id="new_tab" value={newTabName} onChange={(e) => setNewTabName(e.target.value)} placeholder="VD: Vũ khí" required />
-            </div>
-            <Button htmlType="submit" type="primary">Thêm Tab</Button>
-          </form>
+          <Form layout="inline" onFinish={onCreateTabFinish} className="flex items-end gap-3">
+            <Form.Item label="Tên tab mới" className="!mb-0">
+              <Input value={newTabName} onChange={(e) => setNewTabName(e.target.value)} placeholder="VD: Vũ khí" required />
+            </Form.Item>
+            <Form.Item className="!mb-0">
+              <Button htmlType="submit" type="primary">Thêm Tab</Button>
+            </Form.Item>
+          </Form>
         </Card>
 
         {/* Items in selected tab */}
@@ -276,12 +275,11 @@ export default function ShopDetailPage() {
               </Button>
             </div>
 
-            <form className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end mb-6" onSubmit={onAddItem}>
-              <div>
+            <Form layout="vertical" className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end mb-6" onFinish={onAddItemFinish}>
+              <Form.Item className="!mb-0 md:col-span-2">
                 <ItemCombobox label="Item bán (item_template)" placeholder="Tìm tên hoặc ID..." items={allItems?.items || []} value={tempId} onChange={setTempId} disabled={loadingAllItems || isRefreshingItems} />
-              </div>
-              <div>
-                <label htmlFor="type_sell" className="block text-sm font-medium mb-1">Type Sell</label>
+              </Form.Item>
+              <Form.Item label="Type Sell" className="!mb-0">
                 <Select
                   value={typeSell || undefined}
                   onChange={(v) => setTypeSell(String(v))}
@@ -289,23 +287,26 @@ export default function ShopDetailPage() {
                   options={(typeSellList || []).map((t: any) => ({ label: `${t.NAME} (#${t.id})`, value: String(t.id) }))}
                   style={{ width: '100%' }}
                 />
-              </div>
-              <div>
-                <label htmlFor="cost" className="block text-sm font-medium mb-1">Cost</label>
-                <Input id="cost" value={cost} onChange={(e) => setCost(e.target.value)} placeholder="VD: 1000" />
-              </div>
-              <div className="flex items-center gap-2 mt-6">
-                <Checkbox checked={isNew} onChange={(e) => setIsNew(e.target.checked)} />
-                <label htmlFor="is_new">New</label>
-              </div>
-              <div className="flex items-center gap-2 mt-6">
-                <Checkbox checked={isSell} onChange={(e) => setIsSell(e.target.checked)} />
-                <label htmlFor="is_sell">Sell</label>
-              </div>
-              <div className="md:col-span-6">
+              </Form.Item>
+              <Form.Item label="Cost" className="!mb-0">
+                <Input value={cost} onChange={(e) => setCost(e.target.value)} placeholder="VD: 1000" />
+              </Form.Item>
+              <Form.Item className="!mb-0">
+                <Space align="center">
+                  <Switch checked={isNew} onChange={setIsNew} />
+                  <span>New</span>
+                </Space>
+              </Form.Item>
+              <Form.Item className="!mb-0">
+                <Space align="center">
+                  <Switch checked={isSell} onChange={setIsSell} />
+                  <span>Sell</span>
+                </Space>
+              </Form.Item>
+              <Form.Item className="!mb-0 md:col-span-5">
                 <Button htmlType="submit" type="primary">Thêm Item</Button>
-              </div>
-            </form>
+              </Form.Item>
+            </Form>
 
             {loadingItems ? (
               <div>Đang tải items...</div>

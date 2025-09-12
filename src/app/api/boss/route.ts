@@ -63,10 +63,21 @@ export async function POST(request: NextRequest) {
         console.log('API POST - Received body:', body);
         console.log('API POST - seconds_rest:', body.seconds_rest);
 
-        // Validate required fields
-        if (!body.id || !body.name || !body.dame) {
+        // Validate required fields with correct numeric handling
+        const idValid = typeof body.id === 'number' && Number.isFinite(body.id) && body.id > 0;
+        const nameValid = typeof body.name === 'string' && body.name.trim().length > 0;
+        const dameValid = typeof body.dame === 'number' && Number.isFinite(body.dame) && body.dame >= 0;
+
+        if (!idValid || !nameValid || !dameValid) {
             return NextResponse.json(
-                { error: 'Missing required fields: id, name, dame' },
+                {
+                    error: 'Validation failed',
+                    details: {
+                        id: idValid ? undefined : 'ID phải là số > 0',
+                        name: nameValid ? undefined : 'Tên boss không được để trống',
+                        dame: dameValid ? undefined : 'Sát thương phải là số >= 0',
+                    },
+                },
                 { status: 400 }
             );
         }
@@ -100,7 +111,7 @@ export async function POST(request: NextRequest) {
         const boss = await prisma.bosses.create({
             data: {
                 id: body.id,
-                name: body.name,
+                name: body.name.trim(),
                 gender: body.gender || 0,
                 dame: body.dame,
                 hp_json: body.hp_json,

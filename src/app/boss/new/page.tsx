@@ -7,15 +7,15 @@ import OutfitCombobox from '@/components/OutfitCombobox';
 import SkillSelector from '@/components/SkillSelector';
 import HPInput from '@/components/HPInput';
 import DurationInput from '@/components/DurationInput';
-import { Card } from 'antd';
-import { Button, Input, Select } from 'antd';
-import { useForm } from 'react-hook-form';
+import { Card, Form, Row, Col, Typography, Space, Divider } from 'antd';
+import { Button, Input, Select, InputNumber, Switch } from 'antd';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 
 const bossSchema = z.object({
     id: z.number().min(1, 'ID phải lớn hơn 0'),
-    name: z.string().min(1, 'Tên boss không được để trống'),
+    name: z.string().trim().min(1, 'Tên boss không được để trống'),
     gender: z.number().min(0).max(2),
     dame: z.number().min(0, 'Sát thương phải lớn hơn hoặc bằng 0'),
     hp_json: z.string().refine((val) => {
@@ -119,57 +119,62 @@ export default function NewBossPage() {
         }
     };
 
+    const { Title, Text } = Typography;
+    const { errors } = form.formState;
+
     return (
         <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-4xl mx-auto">
-                {/* Header */}
-                <div className="mb-8">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h1 className="text-3xl font-bold text-gray-900">Thêm Boss Mới</h1>
-                            <p className="mt-2 text-gray-600">Tạo boss mới trong hệ thống</p>
-                        </div>
-                        <Button href="/boss">Quay Lại</Button>
+            <div className="max-w-5xl mx-auto">
+                <div className="mb-6 flex items-center justify-between">
+                    <div>
+                        <Title level={2} style={{ margin: 0 }}>Thêm Boss Mới</Title>
+                        <Text type="secondary">Tạo boss mới trong hệ thống</Text>
                     </div>
+                    <Button href="/boss">Quay Lại</Button>
                 </div>
 
-                {/* Form */}
-                <Card
-                    title="Thông Tin Boss"
-                    extra="Điền đầy đủ thông tin để tạo boss mới"
-                >
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                        {/* Basic Info */}
-                        <div>
-                            <h2 className="text-xl font-semibold text-gray-900 mb-4">Thông Tin Cơ Bản</h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <label htmlFor="id">ID Boss *</label>
-                                    <Input
-                                        id="id"
-                                        type="number"
-                                        {...form.register('id', { valueAsNumber: true })}
-                                        placeholder="Nhập ID boss"
+                <Card title="Thông Tin Boss" extra={<Text type="secondary">Điền đầy đủ thông tin để tạo boss mới</Text>}>
+                    <Form layout="vertical" onFinish={form.handleSubmit(onSubmit)}>
+                        <Row gutter={[16, 8]}>
+                            <Col xs={24} md={12}>
+                                <Form.Item label="ID Boss" required validateStatus={errors.id ? 'error' : undefined} help={errors.id?.message as string}>
+                                    <Controller
+                                        control={form.control}
+                                        name="id"
+                                        render={({ field }) => (
+                                            <InputNumber
+                                                id="id"
+                                                min={1}
+                                                style={{ width: '100%' }}
+                                                placeholder="Nhập ID boss"
+                                                value={field.value}
+                                                onChange={(val) => field.onChange(typeof val === 'number' ? val : 0)}
+                                            />
+                                        )}
                                     />
-                                    {form.formState.errors.id && (
-                                        <p className="text-sm text-red-600">{form.formState.errors.id.message}</p>
-                                    )}
-                                </div>
+                                </Form.Item>
+                            </Col>
 
-                                <div className="space-y-2">
-                                    <label htmlFor="name">Tên Boss *</label>
-                                    <Input
-                                        id="name"
-                                        {...form.register('name')}
-                                        placeholder="Nhập tên boss"
+                            <Col xs={24} md={12}>
+                                <Form.Item label="Tên Boss" required validateStatus={errors.name ? 'error' : undefined} help={errors.name?.message as string}>
+                                    <Controller
+                                        control={form.control}
+                                        name="name"
+                                        render={({ field }) => (
+                                            <Input
+                                                id="name"
+                                                placeholder="Nhập tên boss"
+                                                value={field.value}
+                                                onChange={(e) => field.onChange(e.target.value)}
+                                                onBlur={field.onBlur}
+                                            />
+                                        )}
                                     />
-                                    {form.formState.errors.name && (
-                                        <p className="text-sm text-red-600">{form.formState.errors.name.message}</p>
-                                    )}
-                                </div>
+                                </Form.Item>
+                            </Col>
 
-                                <div className="space-y-2">
-                                    <label htmlFor="gender">Hành Tinh</label>
+                            <Col xs={24} md={12}>
+                                <Form.Item label="Hành Tinh">
                                     <Select
                                         value={genderValue || undefined}
                                         onChange={(value) => {
@@ -180,111 +185,132 @@ export default function NewBossPage() {
                                         options={getGenderOptions().map((o) => ({ label: o.label, value: String(o.value) }))}
                                         style={{ width: '100%' }}
                                     />
-                                </div>
+                                </Form.Item>
+                            </Col>
 
-                                <div className="space-y-2">
-                                    <label htmlFor="dame">Sát Thương *</label>
-                                    <Input
-                                        id="dame"
-                                        type="number"
-                                        step="0.01"
-                                        {...form.register('dame', { valueAsNumber: true })}
-                                        placeholder="Nhập sát thương"
+                            <Col xs={24} md={12}>
+                                <Form.Item label="Sát Thương" required validateStatus={errors.dame ? 'error' : undefined} help={errors.dame?.message as string}>
+                                    <Controller
+                                        control={form.control}
+                                        name="dame"
+                                        render={({ field }) => (
+                                            <InputNumber
+                                                id="dame"
+                                                step={0.01}
+                                                min={0}
+                                                style={{ width: '100%' }}
+                                                placeholder="Nhập sát thương"
+                                                value={field.value}
+                                                onChange={(val) => field.onChange(typeof val === 'number' ? val : 0)}
+                                            />
+                                        )}
                                     />
-                                    {form.formState.errors.dame && (
-                                        <p className="text-sm text-red-600">{form.formState.errors.dame.message}</p>
-                                    )}
-                                </div>
+                                </Form.Item>
+                            </Col>
 
-                                <div className="space-y-2">
-                                    <label htmlFor="seconds_rest">Thời Gian Nghỉ</label>
+                            <Col xs={24} md={12}>
+                                <Form.Item label="Thời Gian Nghỉ" validateStatus={errors.seconds_rest ? 'error' : undefined} help={errors.seconds_rest?.message as string}>
                                     <DurationInput
                                         value={form.watch('seconds_rest')}
                                         onChange={(seconds: number) => form.setValue('seconds_rest', seconds)}
                                         placeholder="Nhập thời gian nghỉ"
                                         error={form.formState.errors.seconds_rest?.message}
                                     />
-                                </div>
+                                </Form.Item>
+                            </Col>
 
-                                <div className="space-y-2">
-                                    <label htmlFor="type_appear">Loại Xuất Hiện</label>
-                                    <Input
-                                        id="type_appear"
-                                        type="number"
-                                        {...form.register('type_appear', { valueAsNumber: true })}
-                                        placeholder="Nhập loại xuất hiện"
+                            <Col xs={24} md={12}>
+                                <Form.Item label="Loại Xuất Hiện">
+                                    <Controller
+                                        control={form.control}
+                                        name="type_appear"
+                                        render={({ field }) => (
+                                            <InputNumber
+                                                id="type_appear"
+                                                min={0}
+                                                style={{ width: '100%' }}
+                                                placeholder="Nhập loại xuất hiện"
+                                                value={field.value}
+                                                onChange={(val) => field.onChange(typeof val === 'number' ? val : 0)}
+                                            />
+                                        )}
                                     />
-                                </div>
+                                </Form.Item>
+                            </Col>
 
-                                <div className="md:col-span-2 space-y-2">
-                                    <label htmlFor="is_active">Trạng Thái</label>
-                                    <div className="flex items-center space-x-2">
-                                        <input
-                                            id="is_active"
-                                            type="checkbox"
-                                            {...form.register('is_active')}
-                                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                            <Col xs={24}>
+                                <Form.Item label="Trạng Thái">
+                                    <Space align="center">
+                                        <Controller
+                                            control={form.control}
+                                            name="is_active"
+                                            render={({ field }) => (
+                                                <Switch
+                                                    id="is_active"
+                                                    checked={!!field.value}
+                                                    onChange={(checked) => field.onChange(checked)}
+                                                />
+                                            )}
                                         />
-                                        <label htmlFor="is_active" className="text-sm">Boss hoạt động</label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                                        <Text>Boss hoạt động</Text>
+                                    </Space>
+                                </Form.Item>
+                            </Col>
+                        </Row>
 
-                        {/* Map Selection */}
-                        <div>
-                            <h2 className="text-xl font-semibold text-gray-900 mb-4">Chọn Map</h2>
-                            <MapSelector
-                                value={mapJoinJson}
-                                onChange={(value) => {
-                                    setMapJoinJson(value);
-                                    form.setValue('map_join_json', value);
-                                }}
-                                error={form.formState.errors.map_join_json?.message}
-                            />
-                        </div>
+                        <Divider />
 
-                        {/* Outfit Selection */}
-                        <div>
-                            <h2 className="text-xl font-semibold text-gray-900 mb-4">Chọn Trang Phục</h2>
-                            <OutfitCombobox
-                                value={(() => { try { const v = JSON.parse(bossOutfitsJson || 'null'); return typeof v === 'number' ? String(v) : ''; } catch { return ''; } })()}
-                                onChange={(idStr) => {
-                                    const json = idStr ? JSON.stringify(parseInt(idStr, 10)) : 'null';
-                                    setBossOutfitsJson(json);
-                                    form.setValue('boss_outfits_json', json);
-                                }}
-                            />
-                        </div>
+                        <Row gutter={[16, 8]}>
+                            <Col span={24}>
+                                <Form.Item label="Chọn Map" validateStatus={errors.map_join_json ? 'error' : undefined} help={errors.map_join_json?.message as string}>
+                                    <MapSelector
+                                        value={mapJoinJson}
+                                        onChange={(value) => {
+                                            setMapJoinJson(value);
+                                            form.setValue('map_join_json', value);
+                                        }}
+                                        error={form.formState.errors.map_join_json?.message}
+                                    />
+                                </Form.Item>
+                            </Col>
 
-                        {/* Skill Selection */}
-                        <div>
-                            <h2 className="text-xl font-semibold text-gray-900 mb-4">Chọn Kỹ Năng</h2>
-                            <SkillSelector
-                                value={bossSkillsJson}
-                                onChange={(value) => {
-                                    setBossSkillsJson(value);
-                                    form.setValue('boss_skills_json', value);
-                                }}
-                            />
-                        </div>
+                            <Col span={24}>
+                                <Form.Item label="Chọn Trang Phục">
+                                    <OutfitCombobox
+                                        value={(() => { try { const v = JSON.parse(bossOutfitsJson || 'null'); return typeof v === 'number' ? String(v) : ''; } catch { return ''; } })()}
+                                        onChange={(idStr) => {
+                                            const json = idStr ? JSON.stringify(parseInt(idStr, 10)) : 'null';
+                                            setBossOutfitsJson(json);
+                                            form.setValue('boss_outfits_json', json);
+                                        }}
+                                    />
+                                </Form.Item>
+                            </Col>
 
-                        {/* HP Configuration */}
-                        <div>
-                            <h2 className="text-xl font-semibold text-gray-900 mb-4">Cấu hình HP</h2>
-                            <HPInput
-                                value={form.watch('hp_json')}
-                                onChange={(value) => form.setValue('hp_json', value)}
-                                error={form.formState.errors.hp_json?.message}
-                            />
-                        </div>
+                            <Col span={24}>
+                                <Form.Item label="Chọn Kỹ Năng">
+                                    <SkillSelector
+                                        value={bossSkillsJson}
+                                        onChange={(value) => {
+                                            setBossSkillsJson(value);
+                                            form.setValue('boss_skills_json', value);
+                                        }}
+                                    />
+                                </Form.Item>
+                            </Col>
 
-                        {/* Other JSON Data */}
-                        <div>
-                            <h2 className="text-xl font-semibold text-gray-900 mb-4">Dữ Liệu JSON Khác</h2>
-                            <div className="space-y-4">
-                                <div className="space-y-2">
-                                    <label htmlFor="bosses_appear_together_json">Bosses Appear Together JSON</label>
+                            <Col span={24}>
+                                <Form.Item label="Cấu hình HP" validateStatus={errors.hp_json ? 'error' : undefined} help={errors.hp_json?.message as string}>
+                                    <HPInput
+                                        value={form.watch('hp_json')}
+                                        onChange={(value) => form.setValue('hp_json', value)}
+                                        error={form.formState.errors.hp_json?.message}
+                                    />
+                                </Form.Item>
+                            </Col>
+
+                            <Col span={24}>
+                                <Form.Item label="Bosses Appear Together JSON">
                                     <Input.TextArea
                                         id="bosses_appear_together_json"
                                         {...form.register('bosses_appear_together_json')}
@@ -292,18 +318,19 @@ export default function NewBossPage() {
                                         className="font-mono text-sm"
                                         placeholder='{"boss_ids": [1, 2, 3]}'
                                     />
-                                </div>
-                            </div>
-                        </div>
+                                </Form.Item>
+                            </Col>
+                        </Row>
 
-                        {/* Submit Button */}
-                        <div className="flex justify-end space-x-3">
-                            <Button href="/boss">Hủy</Button>
-                            <Button htmlType="submit" type="primary" disabled={isSubmitting}>
-                                {isSubmitting ? 'Đang tạo...' : 'Tạo Boss'}
-                            </Button>
+                        <div className="flex justify-end">
+                            <Space>
+                                <Button href="/boss">Hủy</Button>
+                                <Button htmlType="submit" type="primary" disabled={isSubmitting}>
+                                    {isSubmitting ? 'Đang tạo...' : 'Tạo Boss'}
+                                </Button>
+                            </Space>
                         </div>
-                    </form>
+                    </Form>
                 </Card>
             </div>
         </div>
