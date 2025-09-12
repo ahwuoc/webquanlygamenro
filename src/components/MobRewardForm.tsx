@@ -89,14 +89,13 @@ export default function MobRewardForm({ value, onSubmit, submitting, submitLabel
   useEffect(() => {
     if (value) {
       for (const [k, v] of Object.entries(value)) {
-        // @ts-ignore
         setValue(k as any, v as any);
       }
     }
   }, [value, setValue]);
 
   const min = watch('quantity_min');
-  const max = watch('quantity_max');
+  // removed unused 'max' to satisfy lint
 
   return (
     <Card>

@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, Popconfirm } from 'antd';
-import MobRewardForm, { MobRewardFormData } from '@/components/MobRewardForm';
+import MobRewardAdvancedForm, { AdvancedGroupForm } from '@/components/MobRewardAdvancedForm';
 
 interface PageProps {
   params: { id: string };
@@ -16,7 +16,7 @@ export default function EditMobRewardPage({ params }: PageProps) {
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [data, setData] = useState<MobRewardFormData | null>(null);
+  const [data, setData] = useState<AdvancedGroupForm | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -28,7 +28,22 @@ export default function EditMobRewardPage({ params }: PageProps) {
       const res = await fetch(`/api/mob-rewards/${id}`);
       if (res.ok) {
         const json = await res.json();
-        setData(json);
+        // Transform API response to AdvancedGroupForm
+        const items = Array.isArray(json._items) ? json._items.map((it: any) => ({
+          id: it.id,
+          item_id: it.item_id,
+          quantity_min: it.quantity_min,
+          quantity_max: it.quantity_max,
+          drop_rate: it.drop_rate,
+          options: Array.isArray(it.mob_reward_item_options) ? it.mob_reward_item_options.map((op: any) => ({ id: op.id, option_id: op.option_id, param: op.param })) : [],
+        })) : [];
+        setData({
+          mob_id: json.mob_id,
+          map_restriction: json.map_restriction ?? null,
+          planet_restriction: json.gender_restriction ?? -1,
+          is_active: !!json.is_active,
+          items,
+        });
       } else {
         alert('Không tìm thấy bản ghi');
         router.push('/mob-rewards');
@@ -38,10 +53,10 @@ export default function EditMobRewardPage({ params }: PageProps) {
     fetchData();
   }, [id, router]);
 
-  const handleSubmit = async (form: MobRewardFormData) => {
+  const handleSubmit = async (form: AdvancedGroupForm) => {
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/mob-rewards/${id}`, {
+      const res = await fetch(`/api/mob-rewards/${id}?replace_items=true`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
@@ -94,7 +109,7 @@ export default function EditMobRewardPage({ params }: PageProps) {
           </div>
         </div>
 
-        <MobRewardForm value={data} submitting={submitting} submitLabel="Cập nhật" onSubmit={handleSubmit} />
+        <MobRewardAdvancedForm value={data} submitting={submitting} onSubmit={handleSubmit} />
       </div>
     </div>
   );

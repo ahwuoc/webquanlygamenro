@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Button, Card, InputNumber, Select, Table, Tag } from 'antd';
+import { Button, Card, Select, Table, Tag } from 'antd';
 
 interface MobRewardRow {
   id: number;
@@ -29,6 +29,9 @@ export default function MobRewardsListPage() {
   const [mobId, setMobId] = useState<number | undefined>(undefined);
   const [itemId, setItemId] = useState<number | undefined>(undefined);
   const [active, setActive] = useState<'all' | '1' | '0'>('all');
+  const [mobs, setMobs] = useState<{ id: number; NAME: string }[]>([]);
+  const [items, setItems] = useState<{ id: number; NAME: string }[]>([]);
+  const [loadingMeta, setLoadingMeta] = useState(true);
 
   const fetchData = async () => {
     setLoading(true);
@@ -53,14 +56,89 @@ export default function MobRewardsListPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, limit, mobId, itemId, active]);
 
+  // Load meta (mobs and items) for name mapping and filters
+  useEffect(() => {
+    let cancelled = false;
+    const loadMeta = async () => {
+      try {
+        setLoadingMeta(true);
+        const [mobsRes, itemsRes] = await Promise.all([
+          fetch('/api/mobs?limit=all'),
+          fetch('/api/items?limit=all'),
+        ]);
+        if (!cancelled) {
+          if (mobsRes.ok) {
+            const m = await mobsRes.json();
+            if (Array.isArray(m)) setMobs(m);
+          }
+          if (itemsRes.ok) {
+            const it = await itemsRes.json();
+            if (Array.isArray(it)) {
+              setItems(it);
+            } else if (Array.isArray(it?.items)) {
+              setItems(it.items);
+            }
+          }
+        }
+      } finally {
+        if (!cancelled) setLoadingMeta(false);
+      }
+    };
+    loadMeta();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const mobNameById = useMemo(() => {
+    const m = new Map<number, string>();
+    for (const x of mobs) m.set(x.id, x.NAME);
+    return m;
+  }, [mobs]);
+  const itemNameById = useMemo(() => {
+    const m = new Map<number, string>();
+    for (const x of items) m.set(x.id, x.NAME);
+    return m;
+  }, [items]);
+
   const columns = useMemo(() => [
     { title: 'ID', dataIndex: 'id', width: 80 },
-    { title: 'Mob ID', dataIndex: 'mob_id', width: 100 },
-    { title: 'Item ID', dataIndex: 'item_id', width: 100 },
+    {
+      title: 'Mob',
+      key: 'mob',
+      render: (_: any, r: MobRewardRow) => {
+        const name = mobNameById.get(r.mob_id) || `#${r.mob_id}`;
+        return (
+          <div className="flex flex-col">
+            <span>{name}</span>
+            <span className="text-xs text-gray-500">ID: {r.mob_id}</span>
+          </div>
+        );
+      },
+    },
+    {
+      title: 'Item',
+      key: 'item',
+      render: (_: any, r: MobRewardRow) => {
+        const name = itemNameById.get(r.item_id) || `#${r.item_id}`;
+        return (
+          <div className="flex flex-col">
+            <span>{name}</span>
+            <span className="text-xs text-gray-500">ID: {r.item_id}</span>
+          </div>
+        );
+      },
+    },
     { title: 'Qty', key: 'qty', render: (_: any, r: MobRewardRow) => `${r.quantity_min}-${r.quantity_max}` },
     { title: 'Drop %', dataIndex: 'drop_rate', render: (v: number) => `${v}%` },
     { title: 'Map', dataIndex: 'map_restriction', render: (v: string | null) => v ?? '-' },
-    { title: 'Gender', dataIndex: 'gender_restriction', render: (v: number) => (v === -1 ? 'All' : v) },
+    { title: 'Planet', dataIndex: 'gender_restriction', render: (v: number) => {
+      if (v === -1) return 'Không giới hạn';
+      if (v === 0) return 'Trái Đất (0)';
+      if (v === 1) return 'Namek (1)';
+      if (v === 2) return 'Xayda (2)';
+      return String(v);
+    } },
     { title: 'Option', key: 'option', render: (_: any, r: MobRewardRow) => `${r.option_id}:${r.option_level}` },
     { title: 'Active', dataIndex: 'is_active', render: (v: boolean) => v ? <Tag color="green">Active</Tag> : <Tag>Inactive</Tag> },
     { title: 'Actions', key: 'actions', render: (_: any, r: MobRewardRow) => (
@@ -68,7 +146,7 @@ export default function MobRewardsListPage() {
         <Link href={`/mob-rewards/${r.id}/edit`}>Sửa</Link>
       </div>
     ) },
-  ], []);
+  ], [itemNameById, mobNameById]);
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
@@ -84,12 +162,32 @@ export default function MobRewardsListPage() {
         <Card title="Bộ lọc">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label className="text-sm">Mob ID</label>
-              <InputNumber className="w-full" min={1} value={mobId} onChange={(v) => setMobId(v ?? undefined)} />
+              <label className="text-sm">Mob</label>
+              <Select
+                className="w-full"
+                placeholder={loadingMeta ? 'Đang tải...' : 'Chọn mob'}
+                loading={loadingMeta}
+                allowClear
+                showSearch
+                optionFilterProp="label"
+                value={mobId !== undefined ? String(mobId) : undefined}
+                onChange={(v) => setMobId(v ? parseInt(String(v), 10) : undefined)}
+                options={mobs.map((m) => ({ label: `${m.NAME} (#${m.id})`, value: String(m.id) }))}
+              />
             </div>
             <div>
-              <label className="text-sm">Item ID</label>
-              <InputNumber className="w-full" min={0} value={itemId} onChange={(v) => setItemId(v ?? undefined)} />
+              <label className="text-sm">Item</label>
+              <Select
+                className="w-full"
+                placeholder={loadingMeta ? 'Đang tải...' : 'Chọn item'}
+                loading={loadingMeta}
+                allowClear
+                showSearch
+                optionFilterProp="label"
+                value={itemId !== undefined ? String(itemId) : undefined}
+                onChange={(v) => setItemId(v ? parseInt(String(v), 10) : undefined)}
+                options={items.map((it) => ({ label: `${it.NAME} (#${it.id})`, value: String(it.id) }))}
+              />
             </div>
             <div>
               <label className="text-sm">Trạng thái</label>
@@ -104,8 +202,9 @@ export default function MobRewardsListPage() {
                 ]}
               />
             </div>
-            <div className="flex items-end">
+            <div className="flex items-end gap-2">
               <Button onClick={() => { setPage(1); fetchData(); }}>Làm mới</Button>
+              <Button onClick={() => { setMobId(undefined); setItemId(undefined); setActive('all'); setPage(1); }}>Xóa lọc</Button>
             </div>
           </div>
         </Card>

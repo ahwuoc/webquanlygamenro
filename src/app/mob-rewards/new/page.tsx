@@ -3,13 +3,13 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from 'antd';
-import MobRewardForm, { MobRewardFormData } from '@/components/MobRewardForm';
+import MobRewardAdvancedForm, { AdvancedGroupForm } from '@/components/MobRewardAdvancedForm';
 
 export default function NewMobRewardPage() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = async (data: MobRewardFormData) => {
+  const handleSubmit = async (data: AdvancedGroupForm) => {
     setSubmitting(true);
     try {
       const res = await fetch('/api/mob-rewards', {
@@ -40,7 +40,7 @@ export default function NewMobRewardPage() {
           <Button href="/mob-rewards">Quay lại</Button>
         </div>
 
-        <MobRewardForm submitting={submitting} submitLabel="Tạo" onSubmit={handleSubmit} />
+        <MobRewardAdvancedForm submitting={submitting} onSubmit={handleSubmit} />
       </div>
     </div>
   );

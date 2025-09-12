@@ -82,19 +82,81 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    // If nested items provided, create in nested mode
+    if (Array.isArray(body.items)) {
+      if (body.mob_id === undefined || body.mob_id === null) {
+        return NextResponse.json({ error: 'Missing field: mob_id' }, { status: 400 });
+      }
+      // basic validation for items
+      for (const [i, it] of (body.items as any[]).entries()) {
+        const req = ['item_id', 'quantity_min', 'quantity_max', 'drop_rate'];
+        for (const k of req) {
+          if (it[k] === undefined || it[k] === null) {
+            return NextResponse.json({ error: `Item[${i}] missing field: ${k}` }, { status: 400 });
+          }
+        }
+        if (Number(it.quantity_min) > Number(it.quantity_max)) {
+          return NextResponse.json({ error: `Item[${i}] quantity_min must be <= quantity_max` }, { status: 400 });
+        }
+      }
 
-    // Basic validation (single item create for now)
+      const group = await prisma.mob_reward_groups.create({
+        data: {
+          mob_id: Number(body.mob_id),
+          map_restriction: body.map_restriction ?? null,
+          planet_restriction: body.planet_restriction !== undefined
+            ? Number(body.planet_restriction)
+            : (body.gender_restriction !== undefined ? Number(body.gender_restriction) : -1),
+          is_active: body.is_active !== undefined ? Boolean(body.is_active) : true,
+        },
+      });
+
+      for (const it of body.items as any[]) {
+        const createdItem = await prisma.mob_reward_items.create({
+          data: {
+            group_id: group.id,
+            item_id: Number(it.item_id),
+            quantity_min: Number(it.quantity_min),
+            quantity_max: Number(it.quantity_max),
+            drop_rate: Number(it.drop_rate),
+          },
+        });
+        if (Array.isArray(it.options)) {
+          for (const op of it.options) {
+            await prisma.mob_reward_item_options.create({
+              data: {
+                reward_item_id: createdItem.id,
+                option_id: Number(op.option_id || 0),
+                param: Number(op.param || 0),
+              },
+            });
+          }
+        }
+      }
+
+      // Return group with nested items for advanced UI
+      const full = await prisma.mob_reward_groups.findUnique({
+        where: { id: group.id },
+        include: {
+          mob_reward_items: {
+            include: { mob_reward_item_options: true },
+            orderBy: { id: 'asc' },
+          },
+        },
+      });
+      return NextResponse.json(full, { status: 201 });
+    }
+
+    // Fallback: flat single-item create (backward compatible)
     const required = ['mob_id', 'item_id', 'quantity_min', 'quantity_max', 'drop_rate'];
     for (const k of required) {
       if (body[k] === undefined || body[k] === null) {
         return NextResponse.json({ error: `Missing field: ${k}` }, { status: 400 });
       }
     }
-
     if (Number(body.quantity_min) > Number(body.quantity_max)) {
       return NextResponse.json({ error: 'quantity_min must be <= quantity_max' }, { status: 400 });
     }
-
     const group = await prisma.mob_reward_groups.create({
       data: {
         mob_id: Number(body.mob_id),
@@ -103,7 +165,6 @@ export async function POST(request: NextRequest) {
         is_active: body.is_active !== undefined ? Boolean(body.is_active) : true,
       },
     });
-
     const item = await prisma.mob_reward_items.create({
       data: {
         group_id: group.id,
@@ -113,7 +174,6 @@ export async function POST(request: NextRequest) {
         drop_rate: Number(body.drop_rate),
       },
     });
-
     let opt: any = null;
     const optionId = Number(body.option_id || 0);
     const param = Number(body.option_level || 0);
@@ -126,8 +186,6 @@ export async function POST(request: NextRequest) {
         },
       });
     }
-
-    // Return flattened shape for UI compatibility
     return NextResponse.json({
       id: group.id,
       mob_id: group.mob_id,

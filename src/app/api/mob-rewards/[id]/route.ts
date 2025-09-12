@@ -57,6 +57,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
     }
 
+    const url = new URL(request.url);
+    const replaceItems = url.searchParams.get('replace_items') === 'true';
     const body = await request.json();
 
     if (body.quantity_min !== undefined && body.quantity_max !== undefined) {
@@ -65,17 +67,71 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       }
     }
 
-    // Update group fields
+    // Update group fields (support both planet_restriction and gender_restriction naming)
     await prisma.mob_reward_groups.update({
       where: { id: groupId },
       data: {
         ...(body.mob_id !== undefined ? { mob_id: Number(body.mob_id) } : {}),
         ...(body.map_restriction !== undefined ? { map_restriction: body.map_restriction } : {}),
-        ...(body.gender_restriction !== undefined ? { planet_restriction: Number(body.gender_restriction) } : {}),
+        ...(body.planet_restriction !== undefined
+          ? { planet_restriction: Number(body.planet_restriction) }
+          : (body.gender_restriction !== undefined ? { planet_restriction: Number(body.gender_restriction) } : {})),
         ...(body.is_active !== undefined ? { is_active: Boolean(body.is_active) } : {}),
         updated_at: new Date(),
       },
     });
+
+    // Nested replace mode: replace all items/options
+    if (replaceItems && Array.isArray(body.items)) {
+      // validate items
+      for (const [i, it] of (body.items as any[]).entries()) {
+        const req = ['item_id', 'quantity_min', 'quantity_max', 'drop_rate'];
+        for (const k of req) {
+          if (it[k] === undefined || it[k] === null) {
+            return NextResponse.json({ error: `Item[${i}] missing field: ${k}` }, { status: 400 });
+          }
+        }
+        if (Number(it.quantity_min) > Number(it.quantity_max)) {
+          return NextResponse.json({ error: `Item[${i}] quantity_min must be <= quantity_max` }, { status: 400 });
+        }
+      }
+
+      // Delete existing items (cascade deletes options)
+      await prisma.mob_reward_items.deleteMany({ where: { group_id: groupId } });
+
+      // Recreate items and options
+      for (const it of body.items as any[]) {
+        const createdItem = await prisma.mob_reward_items.create({
+          data: {
+            group_id: groupId,
+            item_id: Number(it.item_id),
+            quantity_min: Number(it.quantity_min),
+            quantity_max: Number(it.quantity_max),
+            drop_rate: Number(it.drop_rate),
+          },
+        });
+        if (Array.isArray(it.options)) {
+          for (const op of it.options) {
+            await prisma.mob_reward_item_options.create({
+              data: {
+                reward_item_id: createdItem.id,
+                option_id: Number(op.option_id || 0),
+                param: Number(op.param || 0),
+              },
+            });
+          }
+        }
+      }
+
+      // Return full group
+      const full = await prisma.mob_reward_groups.findUnique({
+        where: { id: groupId },
+        include: {
+          mob_reward_items: { include: { mob_reward_item_options: true }, orderBy: { id: 'asc' } },
+        },
+      });
+      return NextResponse.json(full);
+    }
 
     // Find first item
     const firstItem = await prisma.mob_reward_items.findFirst({
