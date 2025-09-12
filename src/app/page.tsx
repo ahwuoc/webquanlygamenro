@@ -11,7 +11,6 @@ export default async function Home() {
     await prisma.$connect();
     dbStatus = "Connected";
 
-    // Get table count (approximate)
     const result = await prisma.$queryRaw`SHOW TABLES`;
     tableCount = Array.isArray(result) ? result.length : 0;
 
@@ -82,6 +81,19 @@ export default async function Home() {
               </Link>
 
               <Link
+                href="/shop"
+                className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow text-center"
+              >
+                <div className="p-3 rounded-full bg-purple-100 mx-auto w-fit mb-4">
+                  <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 10-8 0v4M5 11h14l-1 9H6l-1-9z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Shop Management</h3>
+                <p className="text-gray-600">Quản lý shop, tab và item bán trong shop</p>
+              </Link>
+
+              <Link
                 href="/account"
                 className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow text-center"
               >
@@ -105,6 +117,20 @@ export default async function Home() {
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Analytics</h3>
                 <p className="text-gray-600">Thống kê và phân tích dữ liệu</p>
+              </Link>
+
+              {/* Mob Rewards Manager */}
+              <Link
+                href="/mob-rewards"
+                className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow text-center"
+              >
+                <div className="p-3 rounded-full bg-orange-100 mx-auto w-fit mb-4">
+                  <svg className="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c1.657 0 3-.895 3-2s-1.343-2-3-2-3 .895-3 2 1.343 2 3 2zm0 0v12m-7 0h14a2 2 0 002-2v-3a4 4 0 00-4-4H9a4 4 0 00-4 4v3a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Mob Reward Manager</h3>
+                <p className="text-gray-600">Quản lý drop item của mob</p>
               </Link>
             </div>
           </div>

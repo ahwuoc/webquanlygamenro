@@ -1,11 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import { Card, Checkbox, Input, Tag, Button, Space, Divider, Empty, Spin } from 'antd';
+import { SearchOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 
 interface Map {
     id: number;
@@ -92,6 +89,17 @@ export default function MapSelector({ value, onChange, error }: MapSelectorProps
         onChange(newValue);
     };
 
+    const handleSelectAll = () => {
+        const allMapIds = filteredMaps.map(map => map.id);
+        setSelectedMaps(allMapIds);
+        onChange(JSON.stringify(allMapIds));
+    };
+
+    const handleClearAll = () => {
+        setSelectedMaps([]);
+        onChange(JSON.stringify([]));
+    };
+
     const filteredMaps = maps.filter(map =>
         map.NAME.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -107,149 +115,131 @@ export default function MapSelector({ value, onChange, error }: MapSelectorProps
         }
     };
 
+    const getPlanetColor = (planetId: number) => {
+        switch (planetId) {
+            case 0: return 'blue';
+            case 1: return 'green';
+            case 2: return 'orange';
+            default: return 'default';
+        }
+    };
+
     if (loading) {
         return (
-            <Card>
-                <CardHeader>
-                    <CardTitle>Chọn Map</CardTitle>
-                    <CardDescription>Đang tải danh sách map...</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="text-center py-4">Loading...</div>
-                </CardContent>
+            <Card title="Chọn Map">
+                <div className="text-center py-8">
+                    <Spin size="large" />
+                    <p className="mt-4 text-gray-500">Đang tải danh sách map...</p>
+                </div>
             </Card>
         );
     }
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Chọn Map</CardTitle>
-                <CardDescription>
-                    Chọn các map mà boss có thể xuất hiện
+        <Card
+            title="Chọn Map"
+            extra={
+                <Space>
                     {selectedMaps.length > 0 && (
-                        <Badge variant="secondary" className="ml-2">
+                        <Tag color="blue" icon={<CheckCircleOutlined />}>
                             {selectedMaps.length} map đã chọn
-                        </Badge>
+                        </Tag>
                     )}
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="space-y-4">
-                    {/* Search */}
-                    <div className="space-y-2">
-                        <Label htmlFor="map-search">Tìm kiếm map</Label>
-                        <Input
-                            id="map-search"
-                            placeholder="Nhập tên map để tìm kiếm..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                    <Button size="small" onClick={handleSelectAll} disabled={filteredMaps.length === 0}>
+                        Chọn tất cả
+                    </Button>
+                    <Button size="small" onClick={handleClearAll} disabled={selectedMaps.length === 0}>
+                        Bỏ chọn tất cả
+                    </Button>
+                </Space>
+            }
+        >
+            <div className="space-y-4">
+                {/* Search */}
+                <div className="space-y-2">
+                    <label htmlFor="map-search" className="block text-sm font-medium text-gray-700">
+                        Tìm kiếm map
+                    </label>
+                    <Input
+                        id="map-search"
+                        placeholder="Nhập tên map để tìm kiếm..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        prefix={<SearchOutlined />}
+                        allowClear
+                    />
+                </div>
+
+                {/* Maps List */}
+                <div className="max-h-96 overflow-y-auto">
+                    {filteredMaps.length === 0 ? (
+                        <Empty
+                            description={searchTerm ? 'Không tìm thấy map nào' : 'Không có map nào'}
+                            image={Empty.PRESENTED_IMAGE_SIMPLE}
                         />
-                    </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {/* Maps Grid */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                {filteredMaps.map((map) => {
+                                    const isSelected = selectedMaps.includes(map.id);
+                                    return (
+                                        <div
+                                            key={map.id}
+                                            className={`relative p-3 border rounded-lg transition-all duration-200 cursor-pointer ${isSelected
+                                                ? 'bg-green-50 border-green-300 shadow-sm'
+                                                : 'bg-white border-gray-200 hover:border-blue-300 hover:shadow-sm'
+                                                }`}
+                                            onClick={() => handleMapToggle(map.id)}
+                                        >
+                                            {/* Selection indicator */}
+                                            <div className={`absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center ${isSelected ? 'bg-green-500' : 'bg-gray-300'
+                                                }`}>
+                                                {isSelected ? (
+                                                    <CheckCircleOutlined className="text-white text-xs" />
+                                                ) : (
+                                                    <CloseCircleOutlined className="text-white text-xs" />
+                                                )}
+                                            </div>
 
-                    {/* Maps List */}
-                    <div className="max-h-96 overflow-y-auto">
-                        {filteredMaps.length === 0 ? (
-                            <div className="text-center py-4 text-gray-500">
-                                {searchTerm ? 'Không tìm thấy map nào' : 'Không có map nào'}
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-                                {/* Selected Maps Section */}
-                                {selectedMaps.length > 0 && (
-                                    <div>
-                                        <h4 className="text-sm font-medium text-green-700 mb-2 flex items-center">
-                                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                            </svg>
-                                            Map đã chọn ({selectedMaps.length})
-                                        </h4>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
-                                            {filteredMaps
-                                                .filter(map => selectedMaps.includes(map.id))
-                                                .map((map) => (
-                                                    <div
-                                                        key={map.id}
-                                                        className="relative p-3 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer bg-green-50 border-green-200"
-                                                        onClick={() => handleMapToggle(map.id)}
-                                                    >
-                                                        {/* Checkmark overlay */}
-                                                        <div className="absolute top-2 right-2 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
-                                                            <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                                            </svg>
-                                                        </div>
-
-                                                        <div className="flex items-center space-x-2">
-                                                            <Checkbox
-                                                                id={`map-${map.id}`}
-                                                                checked={true}
-                                                                onCheckedChange={() => handleMapToggle(map.id)}
-                                                                onClick={(e) => e.stopPropagation()}
-                                                            />
-                                                            <div className="flex-1 min-w-0">
-                                                                <Label
-                                                                    htmlFor={`map-${map.id}`}
-                                                                    className="text-sm font-medium cursor-pointer block truncate text-green-900"
-                                                                >
-                                                                    {map.NAME}
-                                                                </Label>
-                                                                <div className="text-xs text-green-600 mt-1">
-                                                                    {getPlanetName(map.planet_id)}
-                                                                </div>
-                                                            </div>
-                                                        </div>
+                                            <div className="flex items-start space-x-3 pr-8">
+                                                <Checkbox
+                                                    checked={isSelected}
+                                                    onChange={() => handleMapToggle(map.id)}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                />
+                                                <div className="flex-1 min-w-0">
+                                                    <div className={`text-sm font-medium truncate ${isSelected ? 'text-green-900' : 'text-gray-900'
+                                                        }`}>
+                                                        {map.NAME}
                                                     </div>
-                                                ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Available Maps Section */}
-                                <div>
-                                    <h4 className="text-sm font-medium text-gray-700 mb-2">
-                                        Map có thể chọn ({filteredMaps.filter(map => !selectedMaps.includes(map.id)).length})
-                                    </h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                                        {filteredMaps
-                                            .filter(map => !selectedMaps.includes(map.id))
-                                            .map((map) => (
-                                                <div
-                                                    key={map.id}
-                                                    className="relative p-3 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
-                                                    onClick={() => handleMapToggle(map.id)}
-                                                >
-                                                    <div className="flex items-center space-x-2">
-                                                        <Checkbox
-                                                            id={`map-${map.id}`}
-                                                            checked={false}
-                                                            onCheckedChange={() => handleMapToggle(map.id)}
-                                                            onClick={(e) => e.stopPropagation()}
-                                                        />
-                                                        <div className="flex-1 min-w-0">
-                                                            <Label
-                                                                htmlFor={`map-${map.id}`}
-                                                                className="text-sm font-medium cursor-pointer block truncate"
-                                                            >
-                                                                {map.NAME}
-                                                            </Label>
-                                                            <div className="text-xs text-gray-500 mt-1">
-                                                                {getPlanetName(map.planet_id)}
-                                                            </div>
-                                                        </div>
+                                                    <div className="mt-1">
+                                                        <Tag
+                                                            color={getPlanetColor(map.planet_id)}
+                                                        >
+                                                            {getPlanetName(map.planet_id)}
+                                                        </Tag>
+                                                    </div>
+                                                    <div className="text-xs text-gray-500 mt-1">
+                                                        ID: {map.id} • Zones: {map.zones} • Max: {map.max_player}
                                                     </div>
                                                 </div>
-                                            ))}
-                                    </div>
-                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
-                        )}
-                    </div>
+                        </div>
+                    )}
+                </div>
 
-                    {/* Selected Maps Summary */}
-                    {selectedMaps.length > 0 && (
-                        <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                            <h4 className="text-sm font-medium text-blue-900 mb-2">
+                {/* Selected Maps Summary */}
+                {selectedMaps.length > 0 && (
+                    <>
+                        <Divider />
+                        <div className="p-4 bg-blue-50 rounded-lg">
+                            <h4 className="text-sm font-medium text-blue-900 mb-3 flex items-center">
+                                <CheckCircleOutlined className="mr-2" />
                                 Map đã chọn ({selectedMaps.length}):
                             </h4>
                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
@@ -266,13 +256,15 @@ export default function MapSelector({ value, onChange, error }: MapSelectorProps
                                 })}
                             </div>
                         </div>
-                    )}
+                    </>
+                )}
 
-                    {error && (
-                        <p className="text-sm text-red-600">{error}</p>
-                    )}
-                </div>
-            </CardContent>
+                {error && (
+                    <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
+                        {error}
+                    </div>
+                )}
+            </div>
         </Card>
     );
 }

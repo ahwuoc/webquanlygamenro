@@ -8,11 +8,8 @@ export async function GET(request: NextRequest) {
         const limit = parseInt(searchParams.get('limit') || '10');
         const search = searchParams.get('search') || '';
         const status = searchParams.get('status') || 'all';
-
         const offset = (page - 1) * limit;
-
         const where: any = {};
-
         if (search) {
             where.name = {
                 contains: search,
@@ -63,6 +60,9 @@ export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
 
+        console.log('API POST - Received body:', body);
+        console.log('API POST - seconds_rest:', body.seconds_rest);
+
         // Validate required fields
         if (!body.id || !body.name || !body.dame) {
             return NextResponse.json(
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
             if (body.bosses_appear_together_json) {
                 JSON.parse(body.bosses_appear_together_json);
             }
-        } catch (error) {
+        } catch {
             return NextResponse.json(
                 { error: 'Invalid JSON format' },
                 { status: 400 }

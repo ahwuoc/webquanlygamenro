@@ -80,7 +80,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         if (body.hp_json) {
             try {
                 JSON.parse(body.hp_json);
-            } catch (error) {
+            } catch {
                 return NextResponse.json(
                     { error: 'Invalid hp_json format' },
                     { status: 400 }
@@ -91,7 +91,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         if (body.map_join_json) {
             try {
                 JSON.parse(body.map_join_json);
-            } catch (error) {
+            } catch {
                 return NextResponse.json(
                     { error: 'Invalid map_join_json format' },
                     { status: 400 }
@@ -102,7 +102,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         if (body.bosses_appear_together_json) {
             try {
                 JSON.parse(body.bosses_appear_together_json);
-            } catch (error) {
+            } catch {
                 return NextResponse.json(
                     { error: 'Invalid bosses_appear_together_json format' },
                     { status: 400 }

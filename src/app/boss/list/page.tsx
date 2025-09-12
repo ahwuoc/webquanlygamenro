@@ -1,12 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import Link from "next/link";
 import { getGenderName } from "@/lib/utils";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, Button, Input, Select, Tag } from "antd";
 
 interface BossListPageProps {
     searchParams: {
@@ -73,156 +67,121 @@ export default async function BossListPage({ searchParams }: BossListPageProps) 
                             <h1 className="text-3xl font-bold text-gray-900">Danh Sách Boss</h1>
                             <p className="mt-2 text-gray-600">Quản lý tất cả boss trong hệ thống</p>
                         </div>
-                        <Button asChild>
-                            <Link href="/boss/new">Thêm Boss Mới</Link>
-                        </Button>
+                        <Button href="/boss/new" type="primary">Thêm Boss Mới</Button>
                     </div>
                 </div>
 
                 {/* Filters */}
-                <Card className="mb-8">
-                    <CardHeader>
-                        <CardTitle>Bộ Lọc</CardTitle>
-                        <CardDescription>Tìm kiếm và lọc boss theo điều kiện</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium">Tìm kiếm theo tên</label>
-                                <Input
-                                    placeholder="Nhập tên boss..."
-                                    defaultValue={search}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium">Trạng thái</label>
-                                <Select defaultValue={status}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Chọn trạng thái" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">Tất cả</SelectItem>
-                                        <SelectItem value="active">Hoạt động</SelectItem>
-                                        <SelectItem value="inactive">Không hoạt động</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="flex items-end">
-                                <Button className="w-full">Lọc</Button>
-                            </div>
+                <Card className="mb-8" title="Bộ Lọc" extra={<span className="text-sm text-gray-500">Tìm kiếm và lọc boss theo điều kiện</span>}>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Tìm kiếm theo tên</label>
+                            <Input
+                                placeholder="Nhập tên boss..."
+                                defaultValue={search}
+                            />
                         </div>
-                    </CardContent>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Trạng thái</label>
+                            <Select
+                                defaultValue={status}
+                                options={[
+                                    { label: 'Tất cả', value: 'all' },
+                                    { label: 'Hoạt động', value: 'active' },
+                                    { label: 'Không hoạt động', value: 'inactive' },
+                                ]}
+                                style={{ width: '100%' }}
+                                placeholder="Chọn trạng thái"
+                            />
+                        </div>
+                        <div className="flex items-end">
+                            <Button className="w-full" type="primary">Lọc</Button>
+                        </div>
+                    </div>
                 </Card>
 
                 {/* Boss Table */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Danh sách Boss</CardTitle>
-                        <CardDescription>
-                            Hiển thị {offset + 1} đến {Math.min(offset + limit, totalCount)} trong {totalCount} kết quả
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>ID</TableHead>
-                                    <TableHead>Tên Boss</TableHead>
-                                    <TableHead>Hành Tinh</TableHead>
-                                    <TableHead>Sát Thương</TableHead>
-                                    <TableHead>Thời Gian Nghỉ</TableHead>
-                                    <TableHead>Trạng Thái</TableHead>
-                                    <TableHead>Ngày Tạo</TableHead>
-                                    <TableHead>Hành Động</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
+                <Card title="Danh sách Boss" extra={<span className="text-sm text-gray-500">Hiển thị {offset + 1} đến {Math.min(offset + limit, totalCount)} trong {totalCount} kết quả</span>}>
+                    <div className="relative w-full overflow-x-auto">
+                        <table className="w-full caption-bottom text-sm">
+                            <thead className="[&_tr]:border-b">
+                                <tr className="border-b">
+                                    <th className="h-10 px-2 text-left align-middle font-medium">ID</th>
+                                    <th className="h-10 px-2 text-left align-middle font-medium">Tên Boss</th>
+                                    <th className="h-10 px-2 text-left align-middle font-medium">Hành Tinh</th>
+                                    <th className="h-10 px-2 text-left align-middle font-medium">Sát Thương</th>
+                                    <th className="h-10 px-2 text-left align-middle font-medium">Thời Gian Nghỉ</th>
+                                    <th className="h-10 px-2 text-left align-middle font-medium">Trạng Thái</th>
+                                    <th className="h-10 px-2 text-left align-middle font-medium">Ngày Tạo</th>
+                                    <th className="h-10 px-2 text-left align-middle font-medium">Hành Động</th>
+                                </tr>
+                            </thead>
+                            <tbody>
                                 {bosses.map((boss) => (
-                                    <TableRow key={boss.id}>
-                                        <TableCell className="font-medium">{boss.id}</TableCell>
-                                        <TableCell>
+                                    <tr key={boss.id} className="hover:bg-muted/50 border-b transition-colors">
+                                        <td className="p-2 align-middle font-medium">{boss.id}</td>
+                                        <td className="p-2 align-middle">
                                             <div>
                                                 <div className="font-medium">{boss.name}</div>
                                                 <div className="text-sm text-muted-foreground">
                                                     {boss.boss_rewards.length} phần thưởng, {boss.boss_skills.length} kỹ năng
                                                 </div>
                                             </div>
-                                        </TableCell>
-                                        <TableCell>{getGenderName(boss.gender)}</TableCell>
-                                        <TableCell>{boss.dame.toLocaleString()}</TableCell>
-                                        <TableCell>
-                                            {boss.seconds_rest ? `${boss.seconds_rest}s` : 'Không'}
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge variant={boss.is_active ? "default" : "secondary"}>
+                                        </td>
+                                        <td className="p-2 align-middle">{getGenderName(boss.gender)}</td>
+                                        <td className="p-2 align-middle">{boss.dame.toLocaleString()}</td>
+                                        <td className="p-2 align-middle">{boss.seconds_rest ? `${boss.seconds_rest}s` : 'Không'}</td>
+                                        <td className="p-2 align-middle">
+                                            <Tag color={boss.is_active ? 'green' : 'default'}>
                                                 {boss.is_active ? 'Hoạt Động' : 'Không Hoạt Động'}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell>
-                                            {new Date(boss.created_at).toLocaleDateString('vi-VN')}
-                                        </TableCell>
-                                        <TableCell>
+                                            </Tag>
+                                        </td>
+                                        <td className="p-2 align-middle">{new Date(boss.created_at).toLocaleDateString('vi-VN')}</td>
+                                        <td className="p-2 align-middle">
                                             <div className="flex space-x-2">
-                                                <Button variant="outline" size="sm" asChild>
-                                                    <Link href={`/boss/${boss.id}`}>Xem</Link>
-                                                </Button>
-                                                <Button variant="outline" size="sm" asChild>
-                                                    <Link href={`/boss/${boss.id}/edit`}>Sửa</Link>
-                                                </Button>
-                                                <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
-                                                    Xóa
-                                                </Button>
+                                                <Button size="small" href={`/boss/${boss.id}`}>Xem</Button>
+                                                <Button size="small" href={`/boss/${boss.id}/edit`}>Sửa</Button>
+                                                <Button size="small" danger>Xóa</Button>
                                             </div>
-                                        </TableCell>
-                                    </TableRow>
+                                        </td>
+                                    </tr>
                                 ))}
-                            </TableBody>
-                        </Table>
+                            </tbody>
+                        </table>
+                    </div>
 
-                        {/* Pagination */}
-                        {totalPages > 1 && (
-                            <div className="mt-6 flex items-center justify-between">
-                                <div className="text-sm text-muted-foreground">
-                                    Hiển thị {offset + 1} đến {Math.min(offset + limit, totalCount)} trong {totalCount} kết quả
-                                </div>
-                                <div className="flex space-x-2">
-                                    {page > 1 && (
-                                        <Button variant="outline" size="sm" asChild>
-                                            <Link href={`/boss/list?page=${page - 1}${search ? `&search=${search}` : ''}${status !== 'all' ? `&status=${status}` : ''}`}>
-                                                Trước
-                                            </Link>
-                                        </Button>
-                                    )}
-
-                                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                                        const pageNum = Math.max(1, page - 2) + i;
-                                        if (pageNum > totalPages) return null;
-
-                                        return (
-                                            <Button
-                                                key={pageNum}
-                                                variant={pageNum === page ? "default" : "outline"}
-                                                size="sm"
-                                                asChild
-                                            >
-                                                <Link href={`/boss/list?page=${pageNum}${search ? `&search=${search}` : ''}${status !== 'all' ? `&status=${status}` : ''}`}>
-                                                    {pageNum}
-                                                </Link>
-                                            </Button>
-                                        );
-                                    })}
-
-                                    {page < totalPages && (
-                                        <Button variant="outline" size="sm" asChild>
-                                            <Link href={`/boss/list?page=${page + 1}${search ? `&search=${search}` : ''}${status !== 'all' ? `&status=${status}` : ''}`}>
-                                                Sau
-                                            </Link>
-                                        </Button>
-                                    )}
-                                </div>
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                        <div className="mt-6 flex items-center justify-between">
+                            <div className="text-sm text-muted-foreground">
+                                Hiển thị {offset + 1} đến {Math.min(offset + limit, totalCount)} trong {totalCount} kết quả
                             </div>
-                        )}
-                    </CardContent>
+                            <div className="flex space-x-2">
+                                {page > 1 && (
+                                    <Button size="small" href={`/boss/list?page=${page - 1}${search ? `&search=${search}` : ''}${status !== 'all' ? `&status=${status}` : ''}`}>
+                                        Trước
+                                    </Button>
+                                )}
+
+                                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                    const pageNum = Math.max(1, page - 2) + i;
+                                    if (pageNum > totalPages) return null;
+
+                                    return (
+                                        <Button key={pageNum} size="small" type={pageNum === page ? 'primary' : 'default'} href={`/boss/list?page=${pageNum}${search ? `&search=${search}` : ''}${status !== 'all' ? `&status=${status}` : ''}`}>
+                                            {pageNum}
+                                        </Button>
+                                    );
+                                })}
+
+                                {page < totalPages && (
+                                    <Button size="small" href={`/boss/list?page=${page + 1}${search ? `&search=${search}` : ''}${status !== 'all' ? `&status=${status}` : ''}`}>
+                                        Sau
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </Card>
             </div>
         </div>

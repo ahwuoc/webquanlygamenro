@@ -590,6 +590,51 @@ model bosses {
   boss_texts                  boss_texts[]
 }
 
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model mob_reward_groups {
+  id                 Int                @id @default(autoincrement())
+  mob_id             Int
+  map_restriction    String?            @db.VarChar(255)
+  planet_restriction Int                @default(-1)
+  is_active          Boolean            @default(true)
+  created_at         DateTime           @default(now()) @db.Timestamp(0)
+  updated_at         DateTime           @default(now()) @db.Timestamp(0)
+  mob_reward_items   mob_reward_items[]
+
+  @@index([is_active], map: "idx_active")
+  @@index([mob_id], map: "idx_mob_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model mob_reward_item_options {
+  id               Int              @id @default(autoincrement())
+  reward_item_id   Int
+  option_id        Int
+  param            Int
+  created_at       DateTime         @default(now()) @db.Timestamp(0)
+  updated_at       DateTime         @default(now()) @db.Timestamp(0)
+  mob_reward_items mob_reward_items @relation(fields: [reward_item_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "mob_reward_item_options_ibfk_1")
+
+  @@index([reward_item_id], map: "idx_reward_item_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model mob_reward_items {
+  id                      Int                       @id @default(autoincrement())
+  group_id                Int
+  item_id                 Int                       @db.SmallInt
+  quantity_min            Int                       @default(1)
+  quantity_max            Int                       @default(1)
+  drop_rate               Float                     @default(0)
+  created_at              DateTime                  @default(now()) @db.Timestamp(0)
+  updated_at              DateTime                  @default(now()) @db.Timestamp(0)
+  mob_reward_item_options mob_reward_item_options[]
+  mob_reward_groups       mob_reward_groups         @relation(fields: [group_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "mob_reward_items_ibfk_1")
+
+  @@index([group_id], map: "idx_group_id")
+  @@index([item_id], map: "idx_item_id")
+}
+
 enum alichsunaptien_status {
   pending
   approved

@@ -1,19 +1,16 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getGenderOptions } from '@/lib/utils';
 import MapSelector from '@/components/MapSelector';
-import OutfitSelector from '@/components/OutfitSelector';
+import OutfitCombobox from '@/components/OutfitCombobox';
 import SkillSelector from '@/components/SkillSelector';
 import RewardSelector from '@/components/RewardSelector';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
+import HPInput from '@/components/HPInput';
+import DurationInput from '@/components/DurationInput';
+import { Card } from 'antd';
+import { Button, Input, Select } from 'antd';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -66,9 +63,7 @@ export default function EditBossPage({ params }: EditBossPageProps) {
     const [bossOutfitsJson, setBossOutfitsJson] = useState('[]');
     const [bossSkillsJson, setBossSkillsJson] = useState('[]');
     const [bossRewards, setBossRewards] = useState<any[]>([]);
-    // UI state for seconds_rest with unit (s, m, h)
-    const [restValue, setRestValue] = useState<string>('0');
-    const [restUnit, setRestUnit] = useState<'s' | 'm' | 'h'>('s');
+    // DurationInput will manage seconds_rest directly via form state
 
     const form = useForm<BossFormData>({
         resolver: zodResolver(bossSchema),
@@ -139,19 +134,6 @@ export default function EditBossPage({ params }: EditBossPageProps) {
                     setBossOutfitsJson(outfitsJson);
                     setBossSkillsJson(skillsJson);
                     setBossRewards(bossData.boss_rewards || []);
-
-                    // Initialize seconds_rest UI with best-fitting unit
-                    const seconds = bossData.seconds_rest || 0;
-                    if (seconds > 0 && seconds % 3600 === 0) {
-                        setRestUnit('h');
-                        setRestValue(String(seconds / 3600));
-                    } else if (seconds > 0 && seconds % 60 === 0) {
-                        setRestUnit('m');
-                        setRestValue(String(seconds / 60));
-                    } else {
-                        setRestUnit('s');
-                        setRestValue(String(seconds));
-                    }
                 } else {
                     alert('Không tìm thấy boss');
                     router.push('/boss');
@@ -199,10 +181,6 @@ export default function EditBossPage({ params }: EditBossPageProps) {
                 reward.item_id && reward.item_id > 0
             );
 
-            // Compute seconds_rest from UI unit/value
-            const numericRest = parseFloat(restValue || '0');
-            const secondsRest = isNaN(numericRest) ? 0 : (restUnit === 'h' ? Math.round(numericRest * 3600) : restUnit === 'm' ? Math.round(numericRest * 60) : Math.round(numericRest));
-
             const response = await fetch(`/api/boss/${bossId}`, {
                 method: 'PUT',
                 headers: {
@@ -210,7 +188,8 @@ export default function EditBossPage({ params }: EditBossPageProps) {
                 },
                 body: JSON.stringify({
                     ...data,
-                    seconds_rest: secondsRest,
+                    // seconds_rest is already the correct value in seconds from DurationInput
+                    seconds_rest: data.seconds_rest,
                     bosses_appear_together_json: data.bosses_appear_together_json || null,
                     boss_rewards: validRewards,
                     boss_skills: formattedSkills,
@@ -268,228 +247,172 @@ export default function EditBossPage({ params }: EditBossPageProps) {
                             <p className="mt-2 text-gray-600">Cập nhật thông tin boss #{boss.id}</p>
                         </div>
                         <div className="flex space-x-3">
-                            <Button variant="outline" asChild>
-                                <Link href={`/boss/${boss.id}`}>Xem Chi Tiết</Link>
-                            </Button>
-                            <Button variant="outline" asChild>
-                                <Link href="/boss">Quay Lại</Link>
-                            </Button>
+                            <Button href={`/boss/${boss.id}`}>Xem Chi Tiết</Button>
+                            <Button href="/boss">Quay Lại</Button>
                         </div>
                     </div>
                 </div>
 
                 {/* Form */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Cập Nhật Thông Tin Boss</CardTitle>
-                        <CardDescription>
-                            Chỉnh sửa thông tin boss {boss.name}
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                            {/* Basic Info */}
-                            <div>
-                                <h2 className="text-xl font-semibold text-gray-900 mb-4">Thông Tin Cơ Bản</h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="id">ID Boss</Label>
-                                        <Input
-                                            id="id"
-                                            type="number"
-                                            {...form.register('id', { valueAsNumber: true })}
-                                            disabled
-                                            className="bg-gray-100"
-                                        />
-                                        <p className="text-xs text-gray-500">ID không thể thay đổi</p>
-                                    </div>
+                <Card title={`Cập Nhật Thông Tin Boss – ${boss.name}`}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                        {/* Basic Info */}
+                        <div>
+                            <h2 className="text-xl font-semibold text-gray-900 mb-4">Thông Tin Cơ Bản</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label htmlFor="id">ID Boss</label>
+                                    <Input
+                                        id="id"
+                                        type="number"
+                                        {...form.register('id', { valueAsNumber: true })}
+                                        disabled
+                                        className="bg-gray-100"
+                                    />
+                                    <p className="text-xs text-gray-500">ID không thể thay đổi</p>
+                                </div>
 
-                                    <div className="space-y-2">
-                                        <Label htmlFor="name">Tên Boss *</Label>
-                                        <Input
-                                            id="name"
-                                            {...form.register('name')}
-                                            placeholder="Nhập tên boss"
-                                        />
-                                        {form.formState.errors.name && (
-                                            <p className="text-sm text-red-600">{form.formState.errors.name.message}</p>
-                                        )}
-                                    </div>
+                                <div className="space-y-2">
+                                    <label htmlFor="name">Tên Boss *</label>
+                                    <Input
+                                        id="name"
+                                        {...form.register('name')}
+                                        placeholder="Nhập tên boss"
+                                    />
+                                    {form.formState.errors.name && (
+                                        <p className="text-sm text-red-600">{form.formState.errors.name.message}</p>
+                                    )}
+                                </div>
 
-                                    <div className="space-y-2">
-                                        <Label htmlFor="gender">Hành Tinh</Label>
-                                        <Select
-                                            value={genderValue}
-                                            onValueChange={(value) => {
-                                                setGenderValue(value);
-                                                form.setValue('gender', parseInt(value));
-                                            }}
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Chọn hành tinh" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {getGenderOptions().map((option) => (
-                                                    <SelectItem key={option.value} value={option.value.toString()}>
-                                                        {option.label}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
+                                <div className="space-y-2">
+                                    <label htmlFor="gender">Hành Tinh</label>
+                                    <Select
+                                        value={genderValue || undefined}
+                                        onChange={(value) => {
+                                            setGenderValue(String(value));
+                                            form.setValue('gender', parseInt(String(value)));
+                                        }}
+                                        placeholder="Chọn hành tinh"
+                                        options={getGenderOptions().map((option) => ({ label: option.label, value: String(option.value) }))}
+                                        style={{ width: '100%' }}
+                                    />
+                                </div>
 
-                                    <div className="space-y-2">
-                                        <Label htmlFor="dame">Sát Thương *</Label>
-                                        <Input
-                                            id="dame"
-                                            type="number"
-                                            step="0.01"
-                                            {...form.register('dame', { valueAsNumber: true })}
-                                            placeholder="Nhập sát thương"
-                                        />
-                                        {form.formState.errors.dame && (
-                                            <p className="text-sm text-red-600">{form.formState.errors.dame.message}</p>
-                                        )}
-                                    </div>
+                                <div className="space-y-2">
+                                    <label htmlFor="dame">Sát Thương *</label>
+                                    <Input
+                                        id="dame"
+                                        type="number"
+                                        step="0.01"
+                                        {...form.register('dame', { valueAsNumber: true })}
+                                        placeholder="Nhập sát thương"
+                                    />
+                                    {form.formState.errors.dame && (
+                                        <p className="text-sm text-red-600">{form.formState.errors.dame.message}</p>
+                                    )}
+                                </div>
 
-                                    <div className="space-y-2">
-                                        <Label htmlFor="seconds_rest_value">Thời Gian Nghỉ</Label>
-                                        <div className="flex gap-2">
-                                            <Input
-                                                id="seconds_rest_value"
-                                                type="number"
-                                                value={restValue}
-                                                onChange={(e) => setRestValue(e.target.value)}
-                                                placeholder="Nhập thời gian"
-                                                className="flex-1"
-                                            />
-                                            <Select value={restUnit} onValueChange={(v) => setRestUnit(v as 's' | 'm' | 'h')}>
-                                                <SelectTrigger className="w-28">
-                                                    <SelectValue placeholder="Đơn vị" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="h">Giờ</SelectItem>
-                                                    <SelectItem value="m">Phút</SelectItem>
-                                                    <SelectItem value="s">Giây</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    </div>
+                                <div className="space-y-2">
+                                    <label htmlFor="seconds_rest">Thời Gian Nghỉ</label>
+                                    <DurationInput
+                                        value={form.watch('seconds_rest')}
+                                        onChange={(seconds) => form.setValue('seconds_rest', seconds)}
+                                        placeholder="Nhập thời gian nghỉ"
+                                        error={form.formState.errors.seconds_rest?.message}
+                                    />
+                                </div>
 
-                                    <div className="space-y-2">
-                                        <Label htmlFor="type_appear">Loại Xuất Hiện</Label>
-                                        <Input
-                                            id="type_appear"
-                                            type="number"
-                                            {...form.register('type_appear', { valueAsNumber: true })}
-                                            placeholder="Nhập loại xuất hiện"
-                                        />
-                                    </div>
-
-                                    <div className="md:col-span-2 space-y-2">
-                                        <Label htmlFor="is_active">Trạng Thái</Label>
-                                        <div className="flex items-center space-x-2">
-                                            <input
-                                                id="is_active"
-                                                type="checkbox"
-                                                {...form.register('is_active')}
-                                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                                            />
-                                            <Label htmlFor="is_active" className="text-sm">
-                                                Boss hoạt động
-                                            </Label>
-                                        </div>
+                                <div className="md:col-span-2 space-y-2">
+                                    <label htmlFor="is_active">Trạng Thái</label>
+                                    <div className="flex items-center space-x-2">
+                                        <input id="is_active" type="checkbox" {...form.register('is_active')} className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
+                                        <label htmlFor="is_active" className="text-sm">Boss hoạt động</label>
                                     </div>
                                 </div>
                             </div>
+                        </div>
 
-                            {/* Map Selection */}
-                            <div>
-                                <h2 className="text-xl font-semibold text-gray-900 mb-4">Chọn Map</h2>
-                                <MapSelector
-                                    value={mapJoinJson}
-                                    onChange={(value) => {
-                                        setMapJoinJson(value);
-                                        form.setValue('map_join_json', value);
-                                    }}
-                                    error={form.formState.errors.map_join_json?.message}
-                                />
-                            </div>
+                        {/* Map Selection */}
+                        <div>
+                            <h2 className="text-xl font-semibold text-gray-900 mb-4">Chọn Map</h2>
+                            <MapSelector
+                                value={mapJoinJson}
+                                onChange={(value) => {
+                                    setMapJoinJson(value);
+                                    form.setValue('map_join_json', value);
+                                }}
+                                error={form.formState.errors.map_join_json?.message}
+                            />
+                        </div>
 
-                            {/* Outfit Selection */}
-                            <div>
-                                <h2 className="text-xl font-semibold text-gray-900 mb-4">Chọn Trang Phục</h2>
-                                <OutfitSelector
-                                    value={bossOutfitsJson}
-                                    onChange={(value) => {
-                                        setBossOutfitsJson(value);
-                                        form.setValue('boss_outfits_json', value);
-                                    }}
-                                />
-                            </div>
+                        {/* Outfit Selection */}
+                        <div>
+                            <h2 className="text-xl font-semibold text-gray-900 mb-4">Chọn Trang Phục</h2>
+                            <OutfitCombobox
+                                value={(() => { try { const v = JSON.parse(bossOutfitsJson || 'null'); return typeof v === 'number' ? String(v) : ''; } catch { return ''; } })()}
+                                onChange={(idStr) => {
+                                    const json = idStr ? JSON.stringify(parseInt(idStr, 10)) : 'null';
+                                    setBossOutfitsJson(json);
+                                    form.setValue('boss_outfits_json', json);
+                                }}
+                            />
+                        </div>
 
-                            {/* Skill Selection */}
-                            <div>
-                                <h2 className="text-xl font-semibold text-gray-900 mb-4">Chọn Kỹ Năng</h2>
-                                <SkillSelector
-                                    value={bossSkillsJson}
-                                    onChange={(value) => {
-                                        setBossSkillsJson(value);
-                                        form.setValue('boss_skills_json', value);
-                                    }}
-                                />
-                            </div>
+                        {/* Skill Selection */}
+                        <div>
+                            <h2 className="text-xl font-semibold text-gray-900 mb-4">Chọn Kỹ Năng</h2>
+                            <SkillSelector
+                                value={bossSkillsJson}
+                                onChange={(value) => {
+                                    setBossSkillsJson(value);
+                                    form.setValue('boss_skills_json', value);
+                                }}
+                            />
+                        </div>
 
-                            {/* Reward Selection */}
-                            <div>
-                                <RewardSelector
-                                    rewards={bossRewards}
-                                    onRewardsChange={setBossRewards}
-                                />
-                            </div>
+                        {/* Reward Selection */}
+                        <div>
+                            <RewardSelector
+                                rewards={bossRewards}
+                                onRewardsChange={setBossRewards}
+                            />
+                        </div>
 
-                            {/* JSON Data */}
-                            <div>
-                                <h2 className="text-xl font-semibold text-gray-900 mb-4">Dữ Liệu JSON</h2>
-                                <div className="space-y-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="hp_json">HP JSON *</Label>
-                                        <Textarea
-                                            id="hp_json"
-                                            {...form.register('hp_json')}
-                                            rows={4}
-                                            className="font-mono text-sm"
-                                            placeholder='{"level1": 1000, "level2": 2000}'
-                                        />
-                                        {form.formState.errors.hp_json && (
-                                            <p className="text-sm text-red-600">{form.formState.errors.hp_json.message}</p>
-                                        )}
-                                    </div>
+                        {/* HP Configuration */}
+                        <div>
+                            <h2 className="text-xl font-semibold text-gray-900 mb-4">Cấu hình HP</h2>
+                            <HPInput
+                                value={form.watch('hp_json')}
+                                onChange={(value) => form.setValue('hp_json', value)}
+                                error={form.formState.errors.hp_json?.message}
+                            />
+                        </div>
 
-                                    <div className="space-y-2">
-                                        <Label htmlFor="bosses_appear_together_json">Bosses Appear Together JSON</Label>
-                                        <Textarea
-                                            id="bosses_appear_together_json"
-                                            {...form.register('bosses_appear_together_json')}
-                                            rows={4}
-                                            className="font-mono text-sm"
-                                            placeholder='{"boss_ids": [1, 2, 3]}'
-                                        />
-                                    </div>
+                        {/* Other JSON Data */}
+                        <div>
+                            <h2 className="text-xl font-semibold text-gray-900 mb-4">Dữ Liệu JSON Khác</h2>
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <label htmlFor="bosses_appear_together_json">Bosses Appear Together JSON</label>
+                                    <Input.TextArea
+                                        id="bosses_appear_together_json"
+                                        {...form.register('bosses_appear_together_json')}
+                                        rows={4}
+                                        className="font-mono text-sm"
+                                        placeholder='{"boss_ids": [1, 2, 3]}'
+                                    />
                                 </div>
                             </div>
+                        </div>
 
-                            {/* Submit Button */}
-                            <div className="flex justify-end space-x-3">
-                                <Button type="button" variant="outline" asChild>
-                                    <Link href={`/boss/${boss.id}`}>Hủy</Link>
-                                </Button>
-                                <Button type="submit" disabled={isSubmitting}>
-                                    {isSubmitting ? 'Đang cập nhật...' : 'Cập Nhật Boss'}
-                                </Button>
-                            </div>
-                        </form>
-                    </CardContent>
+                        {/* Submit Button */}
+                        <div className="flex justify-end space-x-3">
+                            <Button href={`/boss/${boss.id}`}>Hủy</Button>
+                            <Button htmlType="submit" type="primary" disabled={isSubmitting}>
+                                {isSubmitting ? 'Đang cập nhật...' : 'Cập Nhật Boss'}
+                            </Button>
+                        </div>
+                    </form>
                 </Card>
             </div>
         </div>

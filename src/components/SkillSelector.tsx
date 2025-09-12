@@ -1,12 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, Button, Input, Select, Tag } from 'antd';
 
 interface Skill {
     skillId: number;
@@ -94,19 +89,7 @@ export default function SkillSelector({ value, onChange, error }: SkillSelectorP
 
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Kỹ Năng Boss</CardTitle>
-                <CardDescription>
-                    Quản lý danh sách kỹ năng của boss
-                    {skills.length > 0 && (
-                        <Badge variant="secondary" className="ml-2">
-                            {skills.length} kỹ năng
-                        </Badge>
-                    )}
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
+        <Card title="Kỹ Năng Boss" extra={skills.length > 0 ? <Tag>{skills.length} kỹ năng</Tag> : null}>
                 <div className="space-y-4">
                     {/* Skills List */}
                     {skills.length > 0 && (
@@ -119,22 +102,14 @@ export default function SkillSelector({ value, onChange, error }: SkillSelectorP
                                 <div key={index} className="p-3 border rounded-lg bg-gray-50">
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                         <div>
-                                            <Label className="text-xs text-gray-600">Kỹ năng</Label>
+                                            <label className="text-xs text-gray-600">Kỹ năng</label>
                                             <Select
                                                 value={String(skill.skillId)}
-                                                onValueChange={(val) => handleUpdateSkill(index, 'skillId', parseInt(val))}
-                                            >
-                                                <SelectTrigger className="h-8">
-                                                    <SelectValue placeholder={loadingSkills ? 'Đang tải...' : 'Chọn kỹ năng'} />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {!loadingSkills && uniqueSkillTemplates.map((tpl) => (
-                                                        <SelectItem key={tpl.id} value={String(tpl.id)}>
-                                                            {tpl.NAME} (#{tpl.id})
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
+                                                onChange={(val) => handleUpdateSkill(index, 'skillId', parseInt(String(val)))}
+                                                placeholder={loadingSkills ? 'Đang tải...' : 'Chọn kỹ năng'}
+                                                options={(!loadingSkills ? uniqueSkillTemplates : []).map((tpl) => ({ label: `${tpl.NAME} (#${tpl.id})`, value: String(tpl.id) }))}
+                                                style={{ width: '100%' }}
+                                            />
                                             <div className="text-[11px] text-gray-500 mt-1">
                                                 {(uniqueSkillTemplates.find(t => t.id === skill.skillId)?.NAME) ? (
                                                     <>Tên: {uniqueSkillTemplates.find(t => t.id === skill.skillId)!.NAME}</>
@@ -144,7 +119,7 @@ export default function SkillSelector({ value, onChange, error }: SkillSelectorP
                                             </div>
                                         </div>
                                         <div>
-                                            <Label className="text-xs text-gray-600">Level</Label>
+                                            <label className="text-xs text-gray-600">Level</label>
                                             <Input
                                                 type="number"
                                                 min="1"
@@ -155,7 +130,7 @@ export default function SkillSelector({ value, onChange, error }: SkillSelectorP
                                             />
                                         </div>
                                         <div>
-                                            <Label className="text-xs text-gray-600">Cooldown (ms)</Label>
+                                            <label className="text-xs text-gray-600">Cooldown (ms)</label>
                                             <Input
                                                 type="number"
                                                 min="0"
@@ -175,12 +150,7 @@ export default function SkillSelector({ value, onChange, error }: SkillSelectorP
                                                 <>Skill #{skill.skillId} • Lv.{skill.level} • {skill.cooldown}ms</>
                                             )}
                                         </div>
-                                        <Button
-                                            type="button"
-                                            variant="destructive"
-                                            size="sm"
-                                            onClick={() => handleRemoveSkill(index)}
-                                        >
+                                        <Button size="small" danger onClick={() => handleRemoveSkill(index)}>
                                             Xóa
                                         </Button>
                                     </div>
@@ -191,13 +161,7 @@ export default function SkillSelector({ value, onChange, error }: SkillSelectorP
 
                     {/* Add Skill Button */}
                     <div className="flex justify-center">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={handleAddSkill}
-                        >
-                            + Thêm Kỹ Năng
-                        </Button>
+                        <Button onClick={handleAddSkill}>+ Thêm Kỹ Năng</Button>
                     </div>
 
                     {/* JSON editor and preview removed */}
@@ -209,7 +173,6 @@ export default function SkillSelector({ value, onChange, error }: SkillSelectorP
 
                     {/* No JSON validation errors since editor removed */}
                 </div>
-            </CardContent>
         </Card>
     );
 }

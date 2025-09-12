@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
         if (!ITEM_CACHE || refresh) {
             const [allItems, allTypes] = await Promise.all([
                 prisma.item_template.findMany({
+                    where: { NAME: { not: '' } },
                     orderBy: { id: 'asc' },
                     select: {
                         id: true,

@@ -1,9 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader as THead, TableRow } from "@/components/ui/table";
+import React from "react";
+import { Card, Input, Button } from "antd";
+import AccountTable from "@/components/AccountTable";
 
 export const dynamic = "force-dynamic";
 
@@ -13,15 +12,6 @@ type SearchParams = {
   pageP?: string; // players page
   accountId?: string; // filter players by account
 };
-
-function buildQuery(base: Record<string, string | number | undefined>, overrides: Record<string, string | number | undefined>) {
-  const params = new URLSearchParams();
-  const merged: Record<string, string | number | undefined> = { ...base, ...overrides };
-  Object.entries(merged).forEach(([k, v]) => {
-    if (v !== undefined && v !== null && String(v) !== "") params.set(k, String(v));
-  });
-  return `?${params.toString()}`;
-}
 
 export default async function AccountPlayerPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const sp = await searchParams;
@@ -84,8 +74,8 @@ export default async function AccountPlayerPage({ searchParams }: { searchParams
     ]),
   ]);
 
-  const totalPagesA = Math.max(1, Math.ceil(totalAcc / pageSizeA));
-  const totalPagesP = Math.max(1, Math.ceil(totalPl / pageSizeP));
+  const _totalPagesA = Math.max(1, Math.ceil(totalAcc / pageSizeA));
+  const _totalPagesP = Math.max(1, Math.ceil(totalPl / pageSizeP));
 
   const baseParams = { q, accountId: accountIdFilter, pageA, pageP } as Record<string, string | number | undefined>;
 
@@ -113,112 +103,47 @@ export default async function AccountPlayerPage({ searchParams }: { searchParams
           )}
           <input type="hidden" name="pageA" value="1" />
           <input type="hidden" name="pageP" value="1" />
-          <Button type="submit">Tìm kiếm</Button>
+          <Button type="primary" htmlType="submit">Tìm kiếm</Button>
           <Link href="/account" className="px-4 py-2 border rounded">Xóa lọc</Link>
         </form>
 
         {/* Accounts Table */}
-        <Card>
-          <CardHeader className="flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-xl">Bảng Account</CardTitle>
-            <span className="text-sm text-gray-500">Tổng: {totalAcc}</span>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <THead>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Username</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Admin</TableHead>
-                  <TableHead>Active</TableHead>
-                  <TableHead>Last Login</TableHead>
-                  <TableHead>Last Logout</TableHead>
-                </TableRow>
-              </THead>
-              <TableBody>
-                {accounts.map((acc) => (
-                  <TableRow key={acc.id}>
-                    <TableCell>{acc.id}</TableCell>
-                    <TableCell>
-                      <Link
-                        href={`/account${buildQuery({ ...baseParams, pageP: 1 }, { accountId: acc.id })}#players`}
-                        className="text-blue-600 hover:underline"
-                        title="Lọc player theo account này"
-                      >
-                        {acc.username}
-                      </Link>
-                    </TableCell>
-                    <TableCell>{acc.role}</TableCell>
-                    <TableCell>{acc.is_admin ? "Yes" : "No"}</TableCell>
-                    <TableCell>{acc.active ? "Active" : "Inactive"}</TableCell>
-                    <TableCell>{acc.last_time_login?.toLocaleString?.() ?? "-"}</TableCell>
-                    <TableCell>{acc.last_time_logout?.toLocaleString?.() ?? "-"}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-
-            {/* Accounts Pagination */}
-            <div className="flex items-center justify-between mt-4 text-sm">
-              <div>Trang {pageA} / {totalPagesA}</div>
-              <div className="space-x-2">
-                {pageA > 1 && (
-                  <Link className="px-3 py-1 border rounded" href={`/account${buildQuery(baseParams, { pageA: pageA - 1 })}`}>Trước</Link>
-                )}
-                {pageA < totalPagesA && (
-                  <Link className="px-3 py-1 border rounded" href={`/account${buildQuery(baseParams, { pageA: pageA + 1 })}`}>Sau</Link>
-                )}
-              </div>
-            </div>
-          </CardContent>
+        <Card
+          title="Bảng Account"
+          extra={<span className="text-sm text-gray-500">Tổng: {totalAcc}</span>}
+        >
+          <AccountTable
+            dataSource={accounts}
+            type="account"
+            baseParams={baseParams}
+            pagination={{
+              current: pageA,
+              total: totalAcc,
+              pageSize: pageSizeA,
+              showSizeChanger: false,
+              showQuickJumper: false,
+            }}
+          />
         </Card>
 
         {/* Players Table */}
-        <Card id="players">
-          <CardHeader className="flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-xl">Bảng Player {accountIdFilter ? `(account_id = ${accountIdFilter})` : ''}</CardTitle>
-            <span className="text-sm text-gray-500">Tổng: {totalPl}</span>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <THead>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Account ID</TableHead>
-                  <TableHead>Tên</TableHead>
-                  <TableHead>Hành Tinh</TableHead>
-                  <TableHead>Head</TableHead>
-                  <TableHead>Thỏi vàng</TableHead>
-                </TableRow>
-              </THead>
-              <TableBody>
-                {players.map((pl) => (
-                  <TableRow key={pl.id}>
-                    <TableCell>{pl.id}</TableCell>
-                    <TableCell>{pl.account_id ?? "-"}</TableCell>
-                    <TableCell className="font-medium">{pl.name}</TableCell>
-                    <TableCell>{pl.gender}</TableCell>
-                    <TableCell>{pl.head}</TableCell>
-                    <TableCell>{pl.thoi_vang}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-
-            {/* Players Pagination */}
-            <div className="flex items-center justify-between mt-4 text-sm">
-              <div>Trang {pageP} / {totalPagesP}</div>
-              <div className="space-x-2">
-                {pageP > 1 && (
-                  <Link className="px-3 py-1 border rounded" href={`/account${buildQuery(baseParams, { pageP: pageP - 1 })}#players`}>Trước</Link>
-                )}
-                {pageP < totalPagesP && (
-                  <Link className="px-3 py-1 border rounded" href={`/account${buildQuery(baseParams, { pageP: pageP + 1 })}#players`}>Sau</Link>
-                )}
-              </div>
-            </div>
-          </CardContent>
+        <Card
+          id="players"
+          title={`Bảng Player ${accountIdFilter ? `(account_id = ${accountIdFilter})` : ''}`}
+          extra={<span className="text-sm text-gray-500">Tổng: {totalPl}</span>}
+        >
+          <AccountTable
+            dataSource={players}
+            type="player"
+            baseParams={baseParams}
+            pagination={{
+              current: pageP,
+              total: totalPl,
+              pageSize: pageSizeP,
+              showSizeChanger: false,
+              showQuickJumper: false,
+            }}
+          />
         </Card>
       </div>
     </div>
