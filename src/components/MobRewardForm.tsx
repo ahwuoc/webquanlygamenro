@@ -41,10 +41,8 @@ export default function MobRewardForm({ value, onSubmit, submitting, submitLabel
     },
   });
 
-  // Load item templates for Select
   const [items, setItems] = useState<{ id: number; NAME: string }[]>([]);
   const [loadingItems, setLoadingItems] = useState<boolean>(true);
-  // Load mob templates for Select
   const [mobs, setMobs] = useState<{ id: number; NAME: string }[]>([]);
   const [loadingMobs, setLoadingMobs] = useState<boolean>(true);
 
@@ -54,7 +52,6 @@ export default function MobRewardForm({ value, onSubmit, submitting, submitLabel
         const res = await fetch('/api/items?limit=all');
         if (res.ok) {
           const data = await res.json();
-          // Expecting array of item_template rows: { id, NAME, ... }
           if (Array.isArray(data)) {
             setItems(data);
           } else if (Array.isArray(data?.items)) {
@@ -92,12 +89,14 @@ export default function MobRewardForm({ value, onSubmit, submitting, submitLabel
   useEffect(() => {
     if (value) {
       for (const [k, v] of Object.entries(value)) {
+        // @ts-ignore
         setValue(k as any, v as any);
       }
     }
   }, [value, setValue]);
 
   const min = watch('quantity_min');
+  const max = watch('quantity_max');
 
   return (
     <Card>
