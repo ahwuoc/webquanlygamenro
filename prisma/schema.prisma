@@ -501,7 +501,6 @@ model task_main_template {
   detail String @db.VarChar(255)
 }
 
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model task_sub_template {
   task_main_id Int
   NAME         String @db.VarChar(255)
@@ -509,9 +508,10 @@ model task_sub_template {
   notify       String @default("") @db.VarChar(255)
   npc_id       Int    @default(-1)
   map          Int
+  id           Int    @id @default(autoincrement())
 
   @@index([task_main_id], map: "task_main_id")
-  @@ignore
+  @@index([task_main_id])
 }
 
 model type_item {

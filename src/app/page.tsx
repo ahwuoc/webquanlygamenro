@@ -132,6 +132,34 @@ export default async function Home() {
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Mob Reward Manager</h3>
                 <p className="text-gray-600">Quản lý drop item của mob</p>
               </Link>
+
+              {/* Giftcodes Manager */}
+              <Link
+                href="/giftcodes"
+                className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow text-center"
+              >
+                <div className="p-3 rounded-full bg-yellow-100 mx-auto w-fit mb-4">
+                  <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c1.657 0 3-.895 3-2s-1.343-2-3-2-3 .895-3 2 1.343 2 3 2zm-7 8a2 2 0 002 2h10a2 2 0 002-2v-1a4 4 0 00-4-4H9a4 4 0 00-4 4v1z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Giftcode Manager</h3>
+                <p className="text-gray-600">Quản lý giftcode hệ thống</p>
+              </Link>
+
+              {/* Task Main Templates Manager */}
+              <Link
+                href="/task-main-templates"
+                className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow text-center"
+              >
+                <div className="p-3 rounded-full bg-teal-100 mx-auto w-fit mb-4">
+                  <svg className="w-8 h-8 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3M5 11h14M5 19h14M7 11v8m10-8v8" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Task Main Templates</h3>
+                <p className="text-gray-600">Quản lý cấu hình nhiệm vụ chính</p>
+              </Link>
             </div>
           </div>
         </div>
