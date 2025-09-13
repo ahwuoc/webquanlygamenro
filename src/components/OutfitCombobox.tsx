@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
-import { Select, Button } from "antd";
+import { Select } from "antd";
 
 interface ItemRow {
   id: number;
@@ -24,24 +24,17 @@ export default function OutfitCombobox({
   value: string; // outfit item_template id as string
   onChange: (val: string) => void;
 }) {
-  const [_open, _setOpen] = useState(false);
-  const [_query, _setQuery] = useState("");
   const [items, setItems] = useState<ItemRow[]>([]);
   const [loading, setLoading] = useState(false);
-  const [refreshedAt, setRefreshedAt] = useState<string | null>(null);
 
-  const loadItems = async (refresh = false) => {
+  const loadItems = async () => {
     setLoading(true);
     try {
-      const url = `/api/items?limit=all${refresh ? "&refresh=1" : ""}`;
-      const resp = await fetch(url);
+      const resp = await fetch(`/api/items?limit=all`);
       if (resp.ok) {
         const data = await resp.json();
         const list: ItemRow[] = (data.items || []).filter((it: ItemRow) => it.TYPE === 5);
         setItems(list);
-        if (data.pagination?.cachedAt) {
-          setRefreshedAt(new Date(data.pagination.cachedAt).toLocaleString());
-        }
       }
     } finally {
       setLoading(false);
@@ -49,7 +42,7 @@ export default function OutfitCombobox({
   };
 
   useEffect(() => {
-    loadItems(false);
+    loadItems();
   }, []);
 
   const options = useMemo(
@@ -61,13 +54,7 @@ export default function OutfitCombobox({
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <label>{label}</label>
-        <Button size="small" onClick={() => loadItems(true)} disabled={loading}>
-          {loading ? "Đang tải..." : "Làm mới cache items"}
-        </Button>
       </div>
-      {refreshedAt && (
-        <div className="text-xs text-muted-foreground">Cache cập nhật: {refreshedAt}</div>
-      )}
       <Select
         showSearch
         virtual
