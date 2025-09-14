@@ -6,6 +6,7 @@ export default async function Home() {
   let dbStatus = "Disconnected";
   let tableCount = 0;
   let accountCount = 0;
+  let taskCount = 0;
 
   try {
     await prisma.$connect();
@@ -16,6 +17,9 @@ export default async function Home() {
 
     // Get account count
     accountCount = await prisma.account.count();
+
+    // Get task count
+    taskCount = await prisma.task_main_template.count();
   } catch (error) {
     console.error("Database connection error:", error);
     dbStatus = "Error";
@@ -50,12 +54,15 @@ export default async function Home() {
             <p className="text-sm text-gray-500 mt-2">
               MySQL: 36.50.135.62:3306/nro_1
             </p>
-            <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
+            <div className="mt-4 grid grid-cols-3 gap-4 text-sm">
               <div className="bg-gray-50 rounded p-2">
                 <span className="font-medium">Tables:</span> {tableCount}
               </div>
               <div className="bg-gray-50 rounded p-2">
                 <span className="font-medium">Accounts:</span> {accountCount}
+              </div>
+              <div className="bg-gray-50 rounded p-2">
+                <span className="font-medium">Tasks:</span> {taskCount}
               </div>
             </div>
           </div>
@@ -147,18 +154,18 @@ export default async function Home() {
                 <p className="text-gray-600">Quản lý giftcode hệ thống</p>
               </Link>
 
-              {/* Task Main Templates Manager */}
+              {/* Task Management */}
               <Link
-                href="/task-main-templates"
+                href="/tasks"
                 className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow text-center"
               >
                 <div className="p-3 rounded-full bg-teal-100 mx-auto w-fit mb-4">
                   <svg className="w-8 h-8 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3M5 11h14M5 19h14M7 11v8m10-8v8" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Task Main Templates</h3>
-                <p className="text-gray-600">Quản lý cấu hình nhiệm vụ chính</p>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Task Management</h3>
+                <p className="text-gray-600">Quản lý hệ thống nhiệm vụ trong game</p>
               </Link>
             </div>
           </div>

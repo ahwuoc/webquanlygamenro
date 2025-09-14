@@ -97,6 +97,89 @@ model bg_item_template {
   dy       Int
 }
 
+model boss_outfits {
+  id      Int    @id @default(autoincrement())
+  boss_id Int
+  item_id Int    @db.SmallInt
+  bosses  bosses @relation(fields: [boss_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "boss_outfits_ibfk_1")
+
+  @@index([boss_id], map: "boss_id")
+}
+
+model boss_reward_item_options {
+  id             Int          @id @default(autoincrement())
+  boss_reward_id Int
+  option_id      Int
+  param          Int
+  boss_rewards   boss_rewards @relation(fields: [boss_reward_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "boss_reward_item_options_ibfk_1")
+
+  @@index([boss_reward_id], map: "boss_reward_id")
+}
+
+model boss_reward_options {
+  id             Int          @id @default(autoincrement())
+  boss_reward_id Int
+  option_id      Int
+  param          Int
+  boss_rewards   boss_rewards @relation(fields: [boss_reward_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "boss_reward_options_ibfk_1")
+
+  @@index([boss_reward_id], map: "boss_reward_id")
+}
+
+model boss_rewards {
+  id                       Int                        @id @default(autoincrement())
+  boss_id                  Int
+  item_id                  Int                        @db.SmallInt
+  quantity                 Int
+  drop_rate                Float
+  boss_reward_item_options boss_reward_item_options[]
+  boss_reward_options      boss_reward_options[]
+  bosses                   bosses                     @relation(fields: [boss_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "boss_rewards_ibfk_1")
+
+  @@index([boss_id], map: "boss_id")
+}
+
+model boss_skills {
+  id          Int    @id @default(autoincrement())
+  boss_id     Int
+  skill_id    Int
+  skill_level Int    @db.TinyInt
+  cooldown    Int
+  bosses      bosses @relation(fields: [boss_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "boss_skills_ibfk_1")
+
+  @@index([boss_id], map: "boss_id")
+}
+
+model boss_texts {
+  id            Int                  @id @default(autoincrement())
+  boss_id       Int
+  text_type     boss_texts_text_type
+  text_content  String               @db.Text
+  display_order Int?                 @default(0)
+  bosses        bosses               @relation(fields: [boss_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "boss_texts_ibfk_1")
+
+  @@index([boss_id], map: "boss_id")
+}
+
+model bosses {
+  id                          Int            @id
+  name                        String         @db.VarChar(100)
+  gender                      Int            @db.TinyInt
+  dame                        Float
+  hp_json                     String         @db.LongText
+  map_join_json               String         @db.LongText
+  seconds_rest                Int?           @default(0)
+  type_appear                 Int?           @default(0) @db.TinyInt
+  bosses_appear_together_json String?        @db.LongText
+  is_active                   Boolean?       @default(true)
+  created_at                  DateTime       @default(now()) @db.Timestamp(0)
+  updated_at                  DateTime       @default(now()) @db.Timestamp(0)
+  boss_outfits                boss_outfits[]
+  boss_rewards                boss_rewards[]
+  boss_skills                 boss_skills[]
+  boss_texts                  boss_texts[]
+}
+
 model caption {
   id   Int    @id @default(autoincrement())
   NAME String @db.VarChar(255)
@@ -147,6 +230,73 @@ model flag_bag {
   gold      Int    @default(-1)
   gem       Int    @default(-1)
   icon_id   Int    @default(0)
+}
+
+model gift_code_item_options {
+  id                Int             @id @default(autoincrement())
+  gift_code_item_id Int
+  option_id         Int
+  param             Int
+  gift_code_items   gift_code_items @relation(fields: [gift_code_item_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "gift_code_item_options_ibfk_1")
+
+  @@index([gift_code_item_id], map: "idx_gift_item")
+}
+
+model gift_code_items {
+  id                     Int                      @id @default(autoincrement())
+  gift_code_id           Int
+  item_id                Int
+  quantity               Int                      @default(1)
+  gift_code_item_options gift_code_item_options[]
+  gift_codes             gift_codes               @relation(fields: [gift_code_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "gift_code_items_ibfk_1")
+
+  @@index([gift_code_id], map: "idx_gift_code")
+}
+
+model gift_code_player_restrictions {
+  id               Int                                            @id @default(autoincrement())
+  gift_code_id     Int
+  player_id        Int
+  restriction_type gift_code_player_restrictions_restriction_type
+  gift_codes       gift_codes                                     @relation(fields: [gift_code_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "gift_code_player_restrictions_ibfk_1")
+
+  @@unique([gift_code_id, player_id], map: "unique_gift_player")
+  @@index([gift_code_id], map: "idx_gift_code")
+  @@index([player_id], map: "idx_player")
+}
+
+model gift_code_usage {
+  id           Int        @id @default(autoincrement())
+  gift_code_id Int
+  player_id    Int
+  used_date    DateTime   @default(now()) @db.Timestamp(0)
+  player_name  String?    @db.VarChar(50)
+  gift_codes   gift_codes @relation(fields: [gift_code_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "gift_code_usage_ibfk_1")
+
+  @@unique([gift_code_id, player_id], map: "unique_usage")
+  @@index([gift_code_id], map: "idx_gift_code")
+  @@index([player_id], map: "idx_player")
+  @@index([used_date], map: "idx_used_date")
+}
+
+model gift_codes {
+  id                            Int                             @id @default(autoincrement())
+  code                          String                          @unique(map: "code") @db.VarChar(50)
+  name                          String                          @db.VarChar(200)
+  description                   String?                         @db.Text
+  max_uses                      Int?                            @default(0)
+  current_uses                  Int?                            @default(0)
+  created_date                  DateTime                        @default(now()) @db.Timestamp(0)
+  expired_date                  DateTime?                       @db.Timestamp(0)
+  is_active                     Boolean?                        @default(true)
+  player_limit_type             gift_codes_player_limit_type?   @default(NONE)
+  vip_level_min                 Int?                            @default(0)
+  gift_code_items               gift_code_items[]
+  gift_code_player_restrictions gift_code_player_restrictions[]
+  gift_code_usage               gift_code_usage[]
+
+  @@index([is_active, expired_date], map: "idx_active_expired")
+  @@index([code], map: "idx_code")
 }
 
 model giftcode {
@@ -297,6 +447,51 @@ model map_template {
   waypoints  String @db.Text
   mobs       String @db.Text
   npcs       String @db.Text
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model mob_reward_groups {
+  id                 Int                @id @default(autoincrement())
+  mob_id             Int
+  map_restriction    String?            @db.VarChar(255)
+  planet_restriction Int                @default(-1)
+  is_active          Boolean            @default(true)
+  created_at         DateTime           @default(now()) @db.Timestamp(0)
+  updated_at         DateTime           @default(now()) @db.Timestamp(0)
+  mob_reward_items   mob_reward_items[]
+
+  @@index([is_active], map: "idx_active")
+  @@index([mob_id], map: "idx_mob_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model mob_reward_item_options {
+  id               Int              @id @default(autoincrement())
+  reward_item_id   Int
+  option_id        Int
+  param            Int
+  created_at       DateTime         @default(now()) @db.Timestamp(0)
+  updated_at       DateTime         @default(now()) @db.Timestamp(0)
+  mob_reward_items mob_reward_items @relation(fields: [reward_item_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "mob_reward_item_options_ibfk_1")
+
+  @@index([reward_item_id], map: "idx_reward_item_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model mob_reward_items {
+  id                      Int                       @id @default(autoincrement())
+  group_id                Int
+  item_id                 Int                       @db.SmallInt
+  quantity_min            Int                       @default(1)
+  quantity_max            Int                       @default(1)
+  drop_rate               Float                     @default(0)
+  created_at              DateTime                  @default(now()) @db.Timestamp(0)
+  updated_at              DateTime                  @default(now()) @db.Timestamp(0)
+  mob_reward_item_options mob_reward_item_options[]
+  mob_reward_groups       mob_reward_groups         @relation(fields: [group_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "mob_reward_items_ibfk_1")
+
+  @@index([group_id], map: "idx_group_id")
+  @@index([item_id], map: "idx_item_id")
 }
 
 model mob_template {
@@ -501,6 +696,35 @@ model task_main_template {
   detail String @db.VarChar(255)
 }
 
+model task_requirements {
+  id               Int                                @id @default(autoincrement())
+  task_main_id     Int
+  task_sub_id      Int
+  requirement_type task_requirements_requirement_type
+  target_id        Int
+  target_count     Int                                @default(1)
+  map_restriction  String?                            @db.VarChar(100)
+  extra_data       String?                            @db.LongText
+  is_active        Boolean?                           @default(true)
+
+  @@index([target_id], map: "idx_target")
+  @@index([task_main_id, task_sub_id], map: "idx_task")
+  @@index([requirement_type], map: "idx_type")
+}
+
+model task_rewards {
+  id                 Int                      @id @default(autoincrement())
+  task_main_id       Int
+  task_sub_id        Int
+  reward_type        task_rewards_reward_type
+  reward_id          Int?                     @default(0)
+  reward_quantity    BigInt                   @default(1)
+  reward_description String?                  @db.VarChar(200)
+
+  @@index([task_main_id, task_sub_id], map: "idx_task")
+  @@index([reward_type], map: "idx_type")
+}
+
 model task_sub_template {
   task_main_id Int
   NAME         String @db.VarChar(255)
@@ -529,207 +753,6 @@ model type_sell_item_shop {
   NAME String @db.VarChar(50)
 }
 
-model boss_outfits {
-  id      Int    @id @default(autoincrement())
-  boss_id Int
-  item_id Int    @db.SmallInt
-  bosses  bosses @relation(fields: [boss_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "boss_outfits_ibfk_1")
-
-  @@index([boss_id], map: "boss_id")
-}
-
-model boss_rewards {
-  id                       Int                        @id @default(autoincrement())
-  boss_id                  Int
-  item_id                  Int                        @db.SmallInt
-  quantity                 Int
-  drop_rate                Float
-  boss_reward_item_options boss_reward_item_options[]
-  boss_reward_options      boss_reward_options[]
-  bosses                   bosses                     @relation(fields: [boss_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "boss_rewards_ibfk_1")
-
-  @@index([boss_id], map: "boss_id")
-}
-
-model boss_skills {
-  id          Int    @id @default(autoincrement())
-  boss_id     Int
-  skill_id    Int
-  skill_level Int    @db.TinyInt
-  cooldown    Int
-  bosses      bosses @relation(fields: [boss_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "boss_skills_ibfk_1")
-
-  @@index([boss_id], map: "boss_id")
-}
-
-model boss_texts {
-  id            Int                  @id @default(autoincrement())
-  boss_id       Int
-  text_type     boss_texts_text_type
-  text_content  String               @db.Text
-  display_order Int?                 @default(0)
-  bosses        bosses               @relation(fields: [boss_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "boss_texts_ibfk_1")
-
-  @@index([boss_id], map: "boss_id")
-}
-
-model bosses {
-  id                          Int            @id
-  name                        String         @db.VarChar(100)
-  gender                      Int            @db.TinyInt
-  dame                        Float
-  hp_json                     String         @db.LongText
-  map_join_json               String         @db.LongText
-  seconds_rest                Int?           @default(0)
-  type_appear                 Int?           @default(0) @db.TinyInt
-  bosses_appear_together_json String?        @db.LongText
-  is_active                   Boolean?       @default(true)
-  created_at                  DateTime       @default(now()) @db.Timestamp(0)
-  updated_at                  DateTime       @default(now()) @db.Timestamp(0)
-  boss_outfits                boss_outfits[]
-  boss_rewards                boss_rewards[]
-  boss_skills                 boss_skills[]
-  boss_texts                  boss_texts[]
-}
-
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model mob_reward_groups {
-  id                 Int                @id @default(autoincrement())
-  mob_id             Int
-  map_restriction    String?            @db.VarChar(255)
-  planet_restriction Int                @default(-1)
-  is_active          Boolean            @default(true)
-  created_at         DateTime           @default(now()) @db.Timestamp(0)
-  updated_at         DateTime           @default(now()) @db.Timestamp(0)
-  mob_reward_items   mob_reward_items[]
-
-  @@index([is_active], map: "idx_active")
-  @@index([mob_id], map: "idx_mob_id")
-}
-
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model mob_reward_item_options {
-  id               Int              @id @default(autoincrement())
-  reward_item_id   Int
-  option_id        Int
-  param            Int
-  created_at       DateTime         @default(now()) @db.Timestamp(0)
-  updated_at       DateTime         @default(now()) @db.Timestamp(0)
-  mob_reward_items mob_reward_items @relation(fields: [reward_item_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "mob_reward_item_options_ibfk_1")
-
-  @@index([reward_item_id], map: "idx_reward_item_id")
-}
-
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model mob_reward_items {
-  id                      Int                       @id @default(autoincrement())
-  group_id                Int
-  item_id                 Int                       @db.SmallInt
-  quantity_min            Int                       @default(1)
-  quantity_max            Int                       @default(1)
-  drop_rate               Float                     @default(0)
-  created_at              DateTime                  @default(now()) @db.Timestamp(0)
-  updated_at              DateTime                  @default(now()) @db.Timestamp(0)
-  mob_reward_item_options mob_reward_item_options[]
-  mob_reward_groups       mob_reward_groups         @relation(fields: [group_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "mob_reward_items_ibfk_1")
-
-  @@index([group_id], map: "idx_group_id")
-  @@index([item_id], map: "idx_item_id")
-}
-
-model boss_reward_item_options {
-  id             Int          @id @default(autoincrement())
-  boss_reward_id Int
-  option_id      Int
-  param          Int
-  boss_rewards   boss_rewards @relation(fields: [boss_reward_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "boss_reward_item_options_ibfk_1")
-
-  @@index([boss_reward_id], map: "boss_reward_id")
-}
-
-model boss_reward_options {
-  id             Int          @id @default(autoincrement())
-  boss_reward_id Int
-  option_id      Int
-  param          Int
-  boss_rewards   boss_rewards @relation(fields: [boss_reward_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "boss_reward_options_ibfk_1")
-
-  @@index([boss_reward_id], map: "boss_reward_id")
-}
-
-model gift_code_item_options {
-  id                Int             @id @default(autoincrement())
-  gift_code_item_id Int
-  option_id         Int
-  param             Int
-  gift_code_items   gift_code_items @relation(fields: [gift_code_item_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "gift_code_item_options_ibfk_1")
-
-  @@index([gift_code_item_id], map: "idx_gift_item")
-}
-
-model gift_code_items {
-  id                     Int                      @id @default(autoincrement())
-  gift_code_id           Int
-  item_id                Int
-  quantity               Int                      @default(1)
-  gift_code_item_options gift_code_item_options[]
-  gift_codes             gift_codes               @relation(fields: [gift_code_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "gift_code_items_ibfk_1")
-
-  @@index([gift_code_id], map: "idx_gift_code")
-}
-
-model gift_code_player_restrictions {
-  id               Int                                            @id @default(autoincrement())
-  gift_code_id     Int
-  player_id        Int
-  restriction_type gift_code_player_restrictions_restriction_type
-  gift_codes       gift_codes                                     @relation(fields: [gift_code_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "gift_code_player_restrictions_ibfk_1")
-
-  @@unique([gift_code_id, player_id], map: "unique_gift_player")
-  @@index([gift_code_id], map: "idx_gift_code")
-  @@index([player_id], map: "idx_player")
-}
-
-model gift_code_usage {
-  id           Int        @id @default(autoincrement())
-  gift_code_id Int
-  player_id    Int
-  used_date    DateTime   @default(now()) @db.Timestamp(0)
-  player_name  String?    @db.VarChar(50)
-  gift_codes   gift_codes @relation(fields: [gift_code_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "gift_code_usage_ibfk_1")
-
-  @@unique([gift_code_id, player_id], map: "unique_usage")
-  @@index([gift_code_id], map: "idx_gift_code")
-  @@index([player_id], map: "idx_player")
-  @@index([used_date], map: "idx_used_date")
-}
-
-model gift_codes {
-  id                            Int                             @id @default(autoincrement())
-  code                          String                          @unique(map: "code") @db.VarChar(50)
-  name                          String                          @db.VarChar(200)
-  description                   String?                         @db.Text
-  max_uses                      Int?                            @default(0)
-  current_uses                  Int?                            @default(0)
-  created_date                  DateTime                        @default(now()) @db.Timestamp(0)
-  expired_date                  DateTime?                       @db.Timestamp(0)
-  is_active                     Boolean?                        @default(true)
-  player_limit_type             gift_codes_player_limit_type?   @default(NONE)
-  vip_level_min                 Int?                            @default(0)
-  gift_code_items               gift_code_items[]
-  gift_code_player_restrictions gift_code_player_restrictions[]
-  gift_code_usage               gift_code_usage[]
-
-  @@index([is_active, expired_date], map: "idx_active_expired")
-  @@index([code], map: "idx_code")
-}
-
-enum alichsunaptien_status {
-  pending
-  approved
-  rejected
-}
-
 enum boss_texts_text_type {
   start
   middle
@@ -739,6 +762,29 @@ enum boss_texts_text_type {
 enum gift_code_player_restrictions_restriction_type {
   ALLOWED
   BLOCKED
+}
+
+enum task_requirements_requirement_type {
+  KILL_MOB
+  KILL_BOSS
+  TALK_NPC
+  PICK_ITEM
+  GO_TO_MAP
+  USE_ITEM
+}
+
+enum task_rewards_reward_type {
+  ITEM
+  GOLD
+  EXP
+  RUBY
+  POWER_POINT
+}
+
+enum alichsunaptien_status {
+  pending
+  approved
+  rejected
 }
 
 enum gift_codes_player_limit_type {

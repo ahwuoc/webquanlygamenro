@@ -1,69 +1,82 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+// GET /api/task-main-templates - Lấy danh sách task chính
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1', 10);
-    const limitParam = searchParams.get('limit') || '10';
-    const limit = limitParam === 'all' ? undefined : parseInt(limitParam, 10);
-    const offset = limit ? (page - 1) * limit : 0;
-    const search = searchParams.get('search')?.trim() || '';
+    const limit = parseInt(searchParams.get('limit') || '20', 10);
+    const skip = (page - 1) * limit;
 
-    const where: any = {};
-    if (search) {
-      where.NAME = { contains: search };
-    }
-
-    const [data, totalCount] = await Promise.all([
+    const [tasks, total] = await Promise.all([
       prisma.task_main_template.findMany({
-        where,
-        skip: limit ? offset : 0,
+        skip,
         take: limit,
         orderBy: { id: 'asc' },
       }),
-      prisma.task_main_template.count({ where }),
+      prisma.task_main_template.count(),
     ]);
 
+    // Fetch related data separately
+    const taskIds = tasks.map(task => task.id);
+    const [subTemplates, requirements, rewards] = await Promise.all([
+      prisma.task_sub_template.findMany({
+        where: { task_main_id: { in: taskIds } },
+      }),
+      prisma.task_requirements.findMany({
+        where: { task_main_id: { in: taskIds } },
+      }),
+      prisma.task_rewards.findMany({
+        where: { task_main_id: { in: taskIds } },
+      }),
+    ]);
+
+    // Combine the data
+    const tasksWithRelations = tasks.map(task => ({
+      ...task,
+      task_sub_templates: subTemplates.filter(sub => sub.task_main_id === task.id),
+      task_requirements: requirements.filter(req => req.task_main_id === task.id),
+      task_rewards: rewards.filter(reward => reward.task_main_id === task.id).map(reward => ({
+        ...reward,
+        reward_quantity: reward.reward_quantity.toString(), // Convert BigInt to string
+      })),
+    }));
+
     return NextResponse.json({
-      data,
-      pagination: limit
-        ? { page, limit, totalCount, totalPages: Math.ceil(totalCount / limit) }
-        : { page: 1, limit: totalCount, totalCount, totalPages: 1 },
+      tasks: tasksWithRelations,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
     });
   } catch (error) {
-    console.error('Error fetching task_main_templates:', error);
-    return NextResponse.json({ error: 'Failed to fetch task main templates' }, { status: 500 });
+    console.error('Error fetching task main templates:', error);
+    return NextResponse.json({ error: 'Failed to fetch tasks' }, { status: 500 });
   }
 }
 
+// POST /api/task-main-templates - Tạo task chính mới
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, NAME, detail } = body || {};
+    const { id, NAME, detail } = body;
 
-    if (typeof id !== 'number' || !Number.isFinite(id) || id <= 0) {
-      return NextResponse.json({ error: 'id phải là số > 0' }, { status: 400 });
-    }
-    if (typeof NAME !== 'string' || NAME.trim().length === 0) {
-      return NextResponse.json({ error: 'NAME không được để trống' }, { status: 400 });
-    }
-    if (typeof detail !== 'string' || detail.trim().length === 0) {
-      return NextResponse.json({ error: 'detail không được để trống' }, { status: 400 });
+    if (!id || !NAME || !detail) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const exists = await prisma.task_main_template.findUnique({ where: { id } });
-    if (exists) {
-      return NextResponse.json({ error: 'Task main template với id này đã tồn tại' }, { status: 400 });
-    }
-
-    const created = await prisma.task_main_template.create({
-      data: { id, NAME: NAME.trim(), detail: detail.trim() },
+    const task = await prisma.task_main_template.create({
+      data: {
+        id: parseInt(id),
+        NAME,
+        detail,
+      },
     });
 
-    return NextResponse.json(created, { status: 201 });
+    return NextResponse.json(task, { status: 201 });
   } catch (error) {
-    console.error('Error creating task_main_template:', error);
-    return NextResponse.json({ error: 'Failed to create task main template' }, { status: 500 });
+    console.error('Error creating task main template:', error);
+    return NextResponse.json({ error: 'Failed to create task' }, { status: 500 });
   }
 }

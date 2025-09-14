@@ -5,57 +5,91 @@ interface RouteParams {
   params: Promise<{ id: string }>
 }
 
+// GET /api/task-sub-templates/[id] - Lấy chi tiết sub task
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
-    const sid = parseInt(id, 10);
-    if (Number.isNaN(sid) || sid <= 0) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
-    const data = await prisma.task_sub_template.findUnique({ where: { id: sid } });
-    if (!data) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-    return NextResponse.json(data);
-  } catch (e) {
-    console.error('Error fetching task_sub_template:', e);
-    return NextResponse.json({ error: 'Failed to fetch' }, { status: 500 });
+    const subTaskId = parseInt(id, 10);
+
+    const subTask = await prisma.task_sub_template.findUnique({
+      where: { id: subTaskId },
+    });
+
+    if (!subTask) {
+      return NextResponse.json({ error: 'Sub task not found' }, { status: 404 });
+    }
+
+    return NextResponse.json(subTask);
+  } catch (error) {
+    console.error('Error fetching sub task:', error);
+    return NextResponse.json({ error: 'Failed to fetch sub task' }, { status: 500 });
   }
 }
 
+// PUT /api/task-sub-templates/[id] - Cập nhật sub task
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
-    const sid = parseInt(id, 10);
-    if (Number.isNaN(sid) || sid <= 0) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
-
+    const subTaskId = parseInt(id, 10);
     const body = await request.json();
-    const { task_main_id, NAME, max_count, notify, npc_id, map } = body || {};
+    const { NAME, max_count, notify, npc_id, map } = body;
 
-    const updated = await prisma.task_sub_template.update({
-      where: { id: sid },
+    const subTask = await prisma.task_sub_template.update({
+      where: { id: subTaskId },
       data: {
-        task_main_id: typeof task_main_id === 'number' ? task_main_id : undefined,
-        NAME: typeof NAME === 'string' ? NAME.trim() : undefined,
-        max_count: typeof max_count === 'number' ? max_count : undefined,
-        notify: typeof notify === 'string' ? notify : undefined,
-        npc_id: typeof npc_id === 'number' ? npc_id : undefined,
-        map: typeof map === 'number' ? map : undefined,
+        NAME,
+        max_count: parseInt(max_count) || -1,
+        notify: notify || '',
+        npc_id: parseInt(npc_id) || -1,
+        map: parseInt(map),
       },
     });
-    return NextResponse.json(updated);
-  } catch (e) {
-    console.error('Error updating task_sub_template:', e);
-    return NextResponse.json({ error: 'Failed to update' }, { status: 500 });
+
+    return NextResponse.json(subTask);
+  } catch (error) {
+    console.error('Error updating sub task:', error);
+    return NextResponse.json({ error: 'Failed to update sub task' }, { status: 500 });
   }
 }
 
+// DELETE /api/task-sub-templates/[id] - Xóa sub task
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
-    const sid = parseInt(id, 10);
-    if (Number.isNaN(sid) || sid <= 0) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
+    const subTaskId = parseInt(id, 10);
 
-    await prisma.task_sub_template.delete({ where: { id: sid } });
-    return NextResponse.json({ message: 'Deleted' });
-  } catch (e) {
-    console.error('Error deleting task_sub_template:', e);
-    return NextResponse.json({ error: 'Failed to delete' }, { status: 500 });
+    // Lấy thông tin sub task để biết task_main_id và task_sub_id
+    const subTask = await prisma.task_sub_template.findUnique({
+      where: { id: subTaskId },
+    });
+
+    if (!subTask) {
+      return NextResponse.json({ error: 'Sub task not found' }, { status: 404 });
+    }
+
+    // Xóa requirements và rewards
+    await prisma.task_requirements.deleteMany({
+      where: {
+        task_main_id: subTask.task_main_id,
+        task_sub_id: subTaskId,
+      },
+    });
+
+    await prisma.task_rewards.deleteMany({
+      where: {
+        task_main_id: subTask.task_main_id,
+        task_sub_id: subTaskId,
+      },
+    });
+
+    // Xóa sub task
+    await prisma.task_sub_template.delete({
+      where: { id: subTaskId },
+    });
+
+    return NextResponse.json({ message: 'Sub task deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting sub task:', error);
+    return NextResponse.json({ error: 'Failed to delete sub task' }, { status: 500 });
   }
 }
