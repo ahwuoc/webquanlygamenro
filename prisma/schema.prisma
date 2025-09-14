@@ -539,12 +539,14 @@ model boss_outfits {
 }
 
 model boss_rewards {
-  id        Int    @id @default(autoincrement())
-  boss_id   Int
-  item_id   Int    @db.SmallInt
-  quantity  Int
-  drop_rate Float
-  bosses    bosses @relation(fields: [boss_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "boss_rewards_ibfk_1")
+  id                       Int                        @id @default(autoincrement())
+  boss_id                  Int
+  item_id                  Int                        @db.SmallInt
+  quantity                 Int
+  drop_rate                Float
+  boss_reward_item_options boss_reward_item_options[]
+  boss_reward_options      boss_reward_options[]
+  bosses                   bosses                     @relation(fields: [boss_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "boss_rewards_ibfk_1")
 
   @@index([boss_id], map: "boss_id")
 }
@@ -635,6 +637,93 @@ model mob_reward_items {
   @@index([item_id], map: "idx_item_id")
 }
 
+model boss_reward_item_options {
+  id             Int          @id @default(autoincrement())
+  boss_reward_id Int
+  option_id      Int
+  param          Int
+  boss_rewards   boss_rewards @relation(fields: [boss_reward_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "boss_reward_item_options_ibfk_1")
+
+  @@index([boss_reward_id], map: "boss_reward_id")
+}
+
+model boss_reward_options {
+  id             Int          @id @default(autoincrement())
+  boss_reward_id Int
+  option_id      Int
+  param          Int
+  boss_rewards   boss_rewards @relation(fields: [boss_reward_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "boss_reward_options_ibfk_1")
+
+  @@index([boss_reward_id], map: "boss_reward_id")
+}
+
+model gift_code_item_options {
+  id                Int             @id @default(autoincrement())
+  gift_code_item_id Int
+  option_id         Int
+  param             Int
+  gift_code_items   gift_code_items @relation(fields: [gift_code_item_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "gift_code_item_options_ibfk_1")
+
+  @@index([gift_code_item_id], map: "idx_gift_item")
+}
+
+model gift_code_items {
+  id                     Int                      @id @default(autoincrement())
+  gift_code_id           Int
+  item_id                Int
+  quantity               Int                      @default(1)
+  gift_code_item_options gift_code_item_options[]
+  gift_codes             gift_codes               @relation(fields: [gift_code_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "gift_code_items_ibfk_1")
+
+  @@index([gift_code_id], map: "idx_gift_code")
+}
+
+model gift_code_player_restrictions {
+  id               Int                                            @id @default(autoincrement())
+  gift_code_id     Int
+  player_id        Int
+  restriction_type gift_code_player_restrictions_restriction_type
+  gift_codes       gift_codes                                     @relation(fields: [gift_code_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "gift_code_player_restrictions_ibfk_1")
+
+  @@unique([gift_code_id, player_id], map: "unique_gift_player")
+  @@index([gift_code_id], map: "idx_gift_code")
+  @@index([player_id], map: "idx_player")
+}
+
+model gift_code_usage {
+  id           Int        @id @default(autoincrement())
+  gift_code_id Int
+  player_id    Int
+  used_date    DateTime   @default(now()) @db.Timestamp(0)
+  player_name  String?    @db.VarChar(50)
+  gift_codes   gift_codes @relation(fields: [gift_code_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "gift_code_usage_ibfk_1")
+
+  @@unique([gift_code_id, player_id], map: "unique_usage")
+  @@index([gift_code_id], map: "idx_gift_code")
+  @@index([player_id], map: "idx_player")
+  @@index([used_date], map: "idx_used_date")
+}
+
+model gift_codes {
+  id                            Int                             @id @default(autoincrement())
+  code                          String                          @unique(map: "code") @db.VarChar(50)
+  name                          String                          @db.VarChar(200)
+  description                   String?                         @db.Text
+  max_uses                      Int?                            @default(0)
+  current_uses                  Int?                            @default(0)
+  created_date                  DateTime                        @default(now()) @db.Timestamp(0)
+  expired_date                  DateTime?                       @db.Timestamp(0)
+  is_active                     Boolean?                        @default(true)
+  player_limit_type             gift_codes_player_limit_type?   @default(NONE)
+  vip_level_min                 Int?                            @default(0)
+  gift_code_items               gift_code_items[]
+  gift_code_player_restrictions gift_code_player_restrictions[]
+  gift_code_usage               gift_code_usage[]
+
+  @@index([is_active, expired_date], map: "idx_active_expired")
+  @@index([code], map: "idx_code")
+}
+
 enum alichsunaptien_status {
   pending
   approved
@@ -645,4 +734,16 @@ enum boss_texts_text_type {
   start
   middle
   end
+}
+
+enum gift_code_player_restrictions_restriction_type {
+  ALLOWED
+  BLOCKED
+}
+
+enum gift_codes_player_limit_type {
+  NONE
+  SPECIFIC_PLAYERS
+  EXCLUDE_PLAYERS
+  VIP_ONLY
 }

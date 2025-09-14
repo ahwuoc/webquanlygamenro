@@ -2,31 +2,21 @@
 
 import { useEffect, useState } from 'react';
 import { Button, Card, Input, Select } from 'antd';
-import GiftcodeTable from '@/components/GiftcodeTable';
+import GiftcodeTable, { type GiftCodeDTO } from '@/components/GiftcodeTable';
 
-interface GiftcodeRow {
-  id: number;
-  code: string;
-  type: number;
-  Delete: boolean;
-  limit: number;
-  listUser: string;
-  listItem: string;
-  bagCount: boolean;
-  itemoption: string;
-  active: number; // 0/1
-}
+type GiftcodeRow = GiftCodeDTO;
 
 export default function GiftcodesPage() {
-  const [data, setData] = useState<GiftcodeRow[]>([]);
+  const [data, setData] = useState<GiftCodeDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [total, setTotal] = useState(0);
 
   const [code, setCode] = useState('');
-  const [type, setType] = useState<string>('all');
   const [active, setActive] = useState<'all' | '1' | '0'>('all');
+  const [playerLimitType, setPlayerLimitType] = useState<'all' | GiftcodeRow['player_limit_type']>('all');
+  const [expired, setExpired] = useState<'all' | 'yes' | 'no'>('all');
 
   const fetchData = async () => {
     setLoading(true);
@@ -34,8 +24,9 @@ export default function GiftcodesPage() {
     params.set('page', String(page));
     params.set('limit', String(limit));
     if (code.trim()) params.set('code', code.trim());
-    if (type !== 'all') params.set('type', type);
     if (active !== 'all') params.set('active', active);
+    if (playerLimitType !== 'all') params.set('player_limit_type', playerLimitType);
+    if (expired !== 'all') params.set('expired', expired);
 
     const res = await fetch(`/api/giftcodes?${params.toString()}`);
     if (res.ok) {
@@ -48,8 +39,7 @@ export default function GiftcodesPage() {
 
   useEffect(() => {
     fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, limit, type, active]);
+  }, [page, limit, active, playerLimitType, expired]);
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
@@ -76,17 +66,17 @@ export default function GiftcodesPage() {
             </div>
 
             <div>
-              <label className="text-sm">Loại (type)</label>
+              <label className="text-sm">Giới hạn player</label>
               <Select
                 className="w-full"
-                value={type}
-                onChange={(v) => setType(v)}
+                value={playerLimitType}
+                onChange={(v) => setPlayerLimitType(v as any)}
                 options={[
                   { label: 'Tất cả', value: 'all' },
-                  { label: '0', value: '0' },
-                  { label: '1', value: '1' },
-                  { label: '2', value: '2' },
-                  { label: '3', value: '3' },
+                  { label: 'NONE', value: 'NONE' },
+                  { label: 'SPECIFIC_PLAYERS', value: 'SPECIFIC_PLAYERS' },
+                  { label: 'EXCLUDE_PLAYERS', value: 'EXCLUDE_PLAYERS' },
+                  { label: 'VIP_ONLY', value: 'VIP_ONLY' },
                 ]}
               />
             </div>
@@ -105,9 +95,23 @@ export default function GiftcodesPage() {
               />
             </div>
 
+            <div>
+              <label className="text-sm">Hết hạn</label>
+              <Select
+                className="w-full"
+                value={expired}
+                onChange={setExpired}
+                options={[
+                  { label: 'Tất cả', value: 'all' },
+                  { label: 'Đã hết hạn', value: 'yes' },
+                  { label: 'Chưa hết hạn/không hạn', value: 'no' },
+                ]}
+              />
+            </div>
+
             <div className="flex items-end gap-2">
               <Button onClick={() => { setPage(1); fetchData(); }}>Tìm</Button>
-              <Button onClick={() => { setCode(''); setType('all'); setActive('all'); setPage(1); }}>Xóa lọc</Button>
+              <Button onClick={() => { setCode(''); setPlayerLimitType('all'); setActive('all'); setExpired('all'); setPage(1); }}>Xóa lọc</Button>
             </div>
           </div>
         </Card>
@@ -124,7 +128,6 @@ export default function GiftcodesPage() {
               onChange: (p: number, ps: number) => { setPage(p); setLimit(ps); },
             }}
             onUpdated={() => {
-              // re-fetch current page after successful update from modal
               fetchData();
             }}
           />
