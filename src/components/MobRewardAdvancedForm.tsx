@@ -102,7 +102,7 @@ export default function MobRewardAdvancedForm({ value, onSubmit, submitting }: P
       planet_restriction: -1,
       is_active: true,
       items: [
-        { item_id: 0, quantity_min: 1, quantity_max: 1, drop_rate: 0, options: [] },
+        { item_id: 0, quantity_min: 1, quantity_max: 1, drop_rate: 10, options: [] },
       ],
       ...value,
     },
@@ -312,9 +312,19 @@ export default function MobRewardAdvancedForm({ value, onSubmit, submitting }: P
                         name={`${itemName}.drop_rate` as any}
                         control={control}
                         render={({ field }) => (
-                          <InputNumber className="w-full" min={0} max={100} step={0.1} value={field.value} onChange={(v) => field.onChange(v)} />
+                          <InputNumber
+                            className="w-full"
+                            min={0}
+                            max={100}
+                            step={0.1}
+                            value={field.value}
+                            onChange={(v) => field.onChange(typeof v === 'number' ? v : 0)}
+                          />
                         )}
                       />
+                      <p className="text-xs text-gray-500">
+                        {watch(`${itemName}.drop_rate`) > 0 ? `${watch(`${itemName}.drop_rate`).toFixed(1)}%` : '0%'}
+                      </p>
                     </div>
                   </div>
                   <OptionsEditor control={control} itemName={itemName} optionOptions={optionOptions} />
@@ -322,7 +332,7 @@ export default function MobRewardAdvancedForm({ value, onSubmit, submitting }: P
               );
             })}
 
-            <Button onClick={() => appendItem({ item_id: 0, quantity_min: 1, quantity_max: 1, drop_rate: 0, options: [] })}>+ Thêm item</Button>
+            <Button onClick={() => appendItem({ item_id: 0, quantity_min: 1, quantity_max: 1, drop_rate: 10, options: [] })}>+ Thêm item</Button>
           </div>
         </Card>
 

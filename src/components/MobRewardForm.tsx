@@ -31,7 +31,7 @@ export default function MobRewardForm({ value, onSubmit, submitting, submitLabel
       item_id: 0,
       quantity_min: 1,
       quantity_max: 1,
-      drop_rate: 0,
+      drop_rate: 10, // 10% default
       map_restriction: null,
       gender_restriction: -1,
       option_id: 0,
@@ -179,9 +179,19 @@ export default function MobRewardForm({ value, onSubmit, submitting, submitLabel
               name="drop_rate"
               control={control}
               render={({ field }) => (
-                <InputNumber className="w-full" min={0} max={100} step={0.1} value={field.value} onChange={(v) => field.onChange(v)} />
+                <InputNumber
+                  className="w-full"
+                  min={0}
+                  max={100}
+                  step={0.1}
+                  value={field.value}
+                  onChange={(v) => field.onChange(typeof v === 'number' ? v : 0)}
+                />
               )}
             />
+            <p className="text-xs text-gray-500">
+              {watch('drop_rate') > 0 ? `${watch('drop_rate').toFixed(1)}%` : '0%'}
+            </p>
           </div>
           <div className="space-y-1">
             <label>Giới hạn map (VD: 1,5,10,15-20,25 hoặc !50-60)</label>

@@ -141,32 +141,38 @@ export default function MobRewardsListPage() {
       },
     },
     { title: 'Qty', key: 'qty', render: (_: any, r: MobRewardRow) => `${r.quantity_min}-${r.quantity_max}` },
-    { title: 'Drop %', dataIndex: 'drop_rate', render: (v: number) => `${v}%` },
+    { title: 'Drop %', dataIndex: 'drop_rate', render: (v: number) => `${v.toFixed(1)}%` },
     { title: 'Map', dataIndex: 'map_restriction', render: (v: string | null) => v ?? '-' },
-    { title: 'Planet', dataIndex: 'gender_restriction', render: (v: number) => {
-      if (v === -1) return 'Không giới hạn';
-      if (v === 0) return 'Trái Đất (0)';
-      if (v === 1) return 'Namek (1)';
-      if (v === 2) return 'Xayda (2)';
-      return String(v);
-    } },
-    { title: 'Option', key: 'option', render: (_: any, r: MobRewardRow) => {
-      const name = optionNameById.get(r.option_id);
-      return name
-        ? (
-          <div className="flex flex-col">
-            <span>{name}</span>
-            <span className="text-xs text-gray-500">ID: {r.option_id} • Param: {r.option_level}</span>
-          </div>
-        )
-        : `${r.option_id}:${r.option_level}`;
-    } },
+    {
+      title: 'Planet', dataIndex: 'gender_restriction', render: (v: number) => {
+        if (v === -1) return 'Không giới hạn';
+        if (v === 0) return 'Trái Đất (0)';
+        if (v === 1) return 'Namek (1)';
+        if (v === 2) return 'Xayda (2)';
+        return String(v);
+      }
+    },
+    {
+      title: 'Option', key: 'option', render: (_: any, r: MobRewardRow) => {
+        const name = optionNameById.get(r.option_id);
+        return name
+          ? (
+            <div className="flex flex-col">
+              <span>{name}</span>
+              <span className="text-xs text-gray-500">ID: {r.option_id} • Param: {r.option_level}</span>
+            </div>
+          )
+          : `${r.option_id}:${r.option_level}`;
+      }
+    },
     { title: 'Active', dataIndex: 'is_active', render: (v: boolean) => v ? <Tag color="green">Active</Tag> : <Tag>Inactive</Tag> },
-    { title: 'Actions', key: 'actions', render: (_: any, r: MobRewardRow) => (
-      <div className="flex gap-2">
-        <Link href={`/mob-rewards/${r.id}/edit`}>Sửa</Link>
-      </div>
-    ) },
+    {
+      title: 'Actions', key: 'actions', render: (_: any, r: MobRewardRow) => (
+        <div className="flex gap-2">
+          <Link href={`/mob-rewards/${r.id}/edit`}>Sửa</Link>
+        </div>
+      )
+    },
   ], [itemNameById, mobNameById, optionNameById]);
 
   return (

@@ -302,7 +302,7 @@ export default async function BossDetailPage({ params }: BossDetailPageProps) {
                                                 <span className="text-sm text-gray-600">{reward.quantity}x</span>
                                             </div>
                                             <div className="mt-1">
-                                                <span className="text-xs text-gray-500">Tỷ lệ rơi: {(reward.drop_rate * 100).toFixed(2)}%</span>
+                                                <span className="text-xs text-gray-500">Tỷ lệ rơi: {(reward.drop_rate).toFixed(1)}%</span>
                                             </div>
                                         </div>
                                     ))}

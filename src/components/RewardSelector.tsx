@@ -49,7 +49,7 @@ export default function RewardSelector({ rewards, onRewardsChange }: RewardSelec
         const newReward: RewardItem = {
             item_id: firstId,
             quantity: 1,
-            drop_rate: 0.1,
+            drop_rate: 10, // 10% default
         };
         onRewardsChange([...rewards, newReward]);
     };
@@ -151,12 +151,12 @@ export default function RewardSelector({ rewards, onRewardsChange }: RewardSelec
                                         min={0}
                                         max={100}
                                         step={0.1}
-                                        value={reward.drop_rate * 100}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateReward(index, 'drop_rate', parseFloat(e.target.value) / 100 || 0)}
+                                        value={reward.drop_rate}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateReward(index, 'drop_rate', parseFloat(e.target.value) || 0)}
                                         disabled={isLoading}
                                     />
                                     <p className="text-xs text-gray-500">
-                                        {reward.drop_rate > 0 ? `${(reward.drop_rate * 100).toFixed(1)}%` : '0%'}
+                                        {reward.drop_rate > 0 ? `${reward.drop_rate.toFixed(1)}%` : '0%'}
                                     </p>
                                 </div>
                             </div>
@@ -165,7 +165,7 @@ export default function RewardSelector({ rewards, onRewardsChange }: RewardSelec
                             <div className="bg-gray-50 rounded p-3">
                                 <p className="text-sm">
                                     <strong>Tóm tắt:</strong> {reward.quantity}x {getItemName(reward.item_id)}
-                                    với tỷ lệ rơi {(reward.drop_rate * 100).toFixed(1)}%
+                                    với tỷ lệ rơi {reward.drop_rate.toFixed(1)}%
                                 </p>
                             </div>
                         </div>
@@ -192,7 +192,7 @@ export default function RewardSelector({ rewards, onRewardsChange }: RewardSelec
                             <span className="text-blue-700">Tỷ lệ rơi trung bình:</span>
                             <span className="ml-2 font-medium">
                                 {rewards.length > 0
-                                    ? `${(rewards.reduce((sum, reward) => sum + reward.drop_rate, 0) / rewards.length * 100).toFixed(1)}%`
+                                    ? `${(rewards.reduce((sum, reward) => sum + reward.drop_rate, 0) / rewards.length).toFixed(1)}%`
                                     : '0%'
                                 }
                             </span>
