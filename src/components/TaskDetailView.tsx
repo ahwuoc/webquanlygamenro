@@ -19,8 +19,8 @@ export default function TaskDetailView({ task }: { task: TaskData }) {
     <div className="max-w-4xl mx-auto space-y-6">
       <Breadcrumb
         items={[
-          { title: <a href="/">Home</a> },
-          { title: <a href="/tasks">Tasks</a> },
+          { title: <Link href="/">Home</Link> },
+          { title: <Link href="/tasks">Tasks</Link> },
           { title: `Task #${task.id}` },
         ]}
       />
