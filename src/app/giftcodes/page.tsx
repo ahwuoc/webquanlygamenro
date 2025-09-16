@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Button, Card, Input, Select } from 'antd';
 import GiftcodeTable, { type GiftCodeDTO } from '@/components/GiftcodeTable';
+import Link from 'next/link';
 
 type GiftcodeRow = GiftCodeDTO;
 
@@ -49,8 +50,7 @@ export default function GiftcodesPage() {
             <h1 className="text-2xl font-bold">Giftcodes</h1>
             <p className="text-gray-600">Quản lý giftcode</p>
           </div>
-          {/* Placeholder for future create page */}
-          {/* <Button type="primary" href="/giftcodes/new">+ Thêm Giftcode</Button> */}
+          <Link href="/giftcodes/new"><Button type="primary">+ Thêm Giftcode</Button></Link>
         </div>
 
         <Card title="Bộ lọc">

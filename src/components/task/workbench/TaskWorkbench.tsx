@@ -209,6 +209,8 @@ export default function TaskWorkbench() {
                   <Text type="secondary">Bạn có thể chỉnh sửa và lưu thay đổi tại đây</Text>
                 </div>
               )}
+              {/* Always attach the form instance to avoid AntD warning when not rendered */}
+              <Form form={form} component={false} />
             </Card>
           </Col>
 
