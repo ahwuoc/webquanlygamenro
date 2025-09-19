@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Card, Table, Button, Space, Drawer, Form, Input, InputNumber, message, Popconfirm, Typography, Row, Col, Tag, Select, Switch, Tooltip, Alert } from "antd";
 import { requirementsService } from "@/lib/api/requirements.service";
 import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined } from "@ant-design/icons";
+import { useRouter } from "next/navigation";
 
 interface Requirement {
   id: number;
@@ -20,6 +21,7 @@ interface Requirement {
 interface RequirementsResponse { requirements: Requirement[] }
 
 export default function RequirementsManager({ taskMainId }: { taskMainId: number }) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<Requirement[]>([]);
   const [filterType, setFilterType] = useState<string | undefined>(undefined);
@@ -45,7 +47,6 @@ export default function RequirementsManager({ taskMainId }: { taskMainId: number
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // Listen to selections made from SubTasksManager
   useEffect(() => {
     const handler = (e: any) => {
       try {
@@ -57,7 +58,7 @@ export default function RequirementsManager({ taskMainId }: { taskMainId: number
             fetchData();
           }
         }
-      } catch {}
+      } catch { }
     };
     if (typeof window !== 'undefined') {
       window.addEventListener('task-sub-select', handler as EventListener);
@@ -74,10 +75,8 @@ export default function RequirementsManager({ taskMainId }: { taskMainId: number
   };
 
   const openEdit = (record: Requirement) => {
-    setIsEdit(true);
-    setCurrentRecord(record);
-    form.setFieldsValue(record);
-    setDrawerOpen(true);
+    // Chuyển đến trang edit requirement chi tiết
+    router.push(`/tasks/${taskMainId}/requirements/${record.id}`);
   };
 
   const handleSubmit = async () => {

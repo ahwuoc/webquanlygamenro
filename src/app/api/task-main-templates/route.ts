@@ -44,12 +44,8 @@ export async function GET(request: NextRequest) {
           reward_description: r.reward_description,
         }));
 
-      // Backward-compatible key; this dataset is deprecated per docs. Return empty array.
-      const subTemplatesCompat: any[] = [];
-
       return {
         ...task,
-        task_sub_templates: subTemplatesCompat,
         task_requirements: reqs,
         task_rewards: rws,
       };

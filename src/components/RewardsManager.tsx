@@ -18,7 +18,13 @@ interface Reward {
 
 interface RewardsResponse { rewards: Reward[] }
 
-export default function RewardsManager({ taskMainId }: { taskMainId: number }) {
+export default function RewardsManager({
+  taskMainId,
+  requirementId
+}: {
+  taskMainId: number;
+  requirementId?: number;
+}) {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<Reward[]>([]);
   const [filterType, setFilterType] = useState<string | undefined>(undefined);
@@ -32,7 +38,20 @@ export default function RewardsManager({ taskMainId }: { taskMainId: number }) {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const json = await rewardsService.list({ task_main_id: taskMainId, task_sub_id: filterSubId, reward_type: filterType });
+      const params: any = { task_main_id: taskMainId };
+
+      // Nếu có requirementId, filter theo requirement_id thay vì task_sub_id
+      if (requirementId) {
+        params.requirement_id = requirementId;
+      } else {
+        params.task_sub_id = filterSubId;
+      }
+
+      if (filterType) {
+        params.reward_type = filterType;
+      }
+
+      const json = await rewardsService.list(params);
       setData(json.rewards);
     } catch (e: any) {
       console.error(e);
@@ -40,11 +59,10 @@ export default function RewardsManager({ taskMainId }: { taskMainId: number }) {
     } finally {
       setLoading(false);
     }
-  }, [taskMainId, filterType, filterSubId]);
+  }, [taskMainId, filterType, filterSubId, requirementId]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // Listen to selections made from SubTasksManager
   useEffect(() => {
     const handler = (e: any) => {
       try {
@@ -67,7 +85,21 @@ export default function RewardsManager({ taskMainId }: { taskMainId: number }) {
     setIsEdit(false);
     setCurrentRecord(null);
     form.resetFields();
-    form.setFieldsValue({ task_main_id: taskMainId, task_sub_id: 0, reward_type: 'ITEM', reward_quantity: 1 });
+
+    const initialValues: any = {
+      task_main_id: taskMainId,
+      reward_type: 'ITEM',
+      reward_quantity: 1
+    };
+
+    // Nếu có requirementId, set requirement_id thay vì task_sub_id
+    if (requirementId) {
+      initialValues.requirement_id = requirementId;
+    } else {
+      initialValues.task_sub_id = 0;
+    }
+
+    form.setFieldsValue(initialValues);
     setDrawerOpen(true);
   };
 
