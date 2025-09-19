@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Button, Card, Form, Input, InputNumber, Select, Space, Table, Tag, message, Divider, Popconfirm, DatePicker, Collapse } from 'antd';
 import dayjs from 'dayjs';
@@ -40,7 +40,7 @@ export default function GiftcodeEditPage() {
     const id = Number(params?.id);
 
     const [loading, setLoading] = useState(true);
-    const [savingMain, setSavingMain] = useState(false);
+    const [_savingMain, setSavingMain] = useState(false);
     const [data, setData] = useState<GiftCodeDTO | null>(null);
     const [form] = Form.useForm<Partial<GiftCodeDTO & { expired_date?: dayjs.Dayjs | null }>>();
 
@@ -64,7 +64,7 @@ export default function GiftcodeEditPage() {
     const [savingAll, setSavingAll] = useState(false);
     const [newOptionByItem, setNewOptionByItem] = useState<Record<number, { optionId?: number; param?: number }>>({});
 
-    const loadMain = async () => {
+    const loadMain = useCallback(async () => {
         try {
             setLoading(true);
             const res = await fetch(`/api/giftcodes/${id}`);
@@ -87,7 +87,7 @@ export default function GiftcodeEditPage() {
             setLoading(false);
         }
 
-    };
+    }, [id, form]);
 
     async function addRestriction() {
         if (!newPlayerId || newPlayerId <= 0) {
@@ -127,7 +127,7 @@ export default function GiftcodeEditPage() {
         }
     }
 
-    const loadRestrictions = async () => {
+    const loadRestrictions = useCallback(async () => {
         try {
             setLoadingRestrictions(true);
             const res = await fetch(`/api/giftcodes/${id}/restrictions`);
@@ -139,9 +139,9 @@ export default function GiftcodeEditPage() {
         } finally {
             setLoadingRestrictions(false);
         }
-    };
+    }, [id]);
 
-    async function searchOptions(forItemId: number, query: string) {
+    async function _searchOptions(_forItemId: number, _query: string) {
         // This function is no longer needed as OptionSelector handles search internally
         return;
     }
@@ -152,7 +152,7 @@ export default function GiftcodeEditPage() {
         return;
     }, []);
 
-    const loadItems = async () => {
+    const loadItems = useCallback(async () => {
         try {
             setLoadingItems(true);
             const res = await fetch(`/api/giftcodes/${id}/items`);
@@ -206,14 +206,14 @@ export default function GiftcodeEditPage() {
         } finally {
             setLoadingItems(false);
         }
-    };
+    }, [id]);
 
     useEffect(() => {
         if (!Number.isFinite(id) || id <= 0) return;
         loadMain();
         loadItems();
         loadRestrictions();
-    }, [id]);
+    }, [id, loadMain, loadItems, loadRestrictions]);
 
 
     // Watch for player_limit_type changes to show/hide restrictions
@@ -257,7 +257,7 @@ export default function GiftcodeEditPage() {
     }, [itemSearch]);
 
     // Save main gift code fields
-    async function saveMain() {
+    async function _saveMain() {
         try {
             const values = await form.validateFields();
             setSavingMain(true);

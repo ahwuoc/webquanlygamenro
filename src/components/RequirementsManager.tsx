@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Card, Table, Button, Space, Drawer, Form, Input, InputNumber, message, Popconfirm, Typography, Row, Col, Tag, Select, Switch, Tooltip, Alert } from "antd";
+import { Card, Table, Button, Space, Drawer, Form, Input, InputNumber, message, Popconfirm, Typography, Row, Col, Tag, Select, Switch, Tooltip } from "antd";
 import { requirementsService } from "@/lib/api/requirements.service";
 import { useTemplateMapping } from '@/lib/api/templateMapping.service';
 import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined } from "@ant-design/icons";
@@ -19,7 +19,7 @@ interface Requirement {
   is_active: boolean;
 }
 
-interface RequirementsResponse { requirements: Requirement[] }
+interface _RequirementsResponse { requirements: Requirement[] }
 
 export default function RequirementsManager({ taskMainId }: { taskMainId: number }) {
   const router = useRouter();
@@ -76,10 +76,10 @@ export default function RequirementsManager({ taskMainId }: { taskMainId: number
     setDrawerOpen(true);
   };
 
-  const openEdit = (record: Requirement) => {
+  const openEdit = useCallback((record: Requirement) => {
     // Chuyển đến trang edit requirement chi tiết
     router.push(`/tasks/${taskMainId}/requirements/${record.id}`);
-  };
+  }, [router, taskMainId]);
 
   const handleSubmit = async () => {
     try {
@@ -100,7 +100,7 @@ export default function RequirementsManager({ taskMainId }: { taskMainId: number
     }
   };
 
-  const handleDelete = async (record: Requirement) => {
+  const handleDelete = useCallback(async (record: Requirement) => {
     try {
       await requirementsService.remove(record.id);
       message.success("Đã xóa requirement");
@@ -109,7 +109,7 @@ export default function RequirementsManager({ taskMainId }: { taskMainId: number
       console.error(e);
       message.error(e.message || "Xóa requirement thất bại");
     }
-  };
+  }, [fetchData]);
 
   const typeColor = (t: string) => {
     switch (t) {
@@ -151,7 +151,7 @@ export default function RequirementsManager({ taskMainId }: { taskMainId: number
         </Space>
       ),
     },
-  ], [getDisplayName]);
+  ], [getDisplayName, handleDelete, openEdit]);
 
   return (
     <Card

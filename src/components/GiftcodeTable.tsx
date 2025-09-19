@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { Button, Popconfirm, Space, Table, Tag, message } from 'antd';
 import Link from 'next/link';
 
@@ -31,6 +31,17 @@ interface GiftcodeTableProps {
 
 export default function GiftcodeTable({ dataSource, loading, pagination, onUpdated }: GiftcodeTableProps) {
 
+  const onDelete = useCallback(async (id: number) => {
+    try {
+      const res = await fetch(`/api/giftcodes/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Xóa thất bại');
+      message.success('Đã xóa giftcode');
+      if (onUpdated) onUpdated();
+    } catch (e: any) {
+      message.error(e?.message || 'Lỗi khi xóa');
+    }
+  }, [onUpdated]);
+
   const columns = useMemo(() => [
     { title: 'ID', dataIndex: 'id', key: 'id', width: 70 },
     { title: 'Code', dataIndex: 'code', key: 'code' },
@@ -60,18 +71,7 @@ export default function GiftcodeTable({ dataSource, loading, pagination, onUpdat
         </Space>
       )
     },
-  ], []);
-
-  async function onDelete(id: number) {
-    try {
-      const res = await fetch(`/api/giftcodes/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Xóa thất bại');
-      message.success('Đã xóa giftcode');
-      if (onUpdated) onUpdated();
-    } catch (e: any) {
-      message.error(e?.message || 'Lỗi khi xóa');
-    }
-  }
+  ], [onDelete]);
 
   // no-op
 

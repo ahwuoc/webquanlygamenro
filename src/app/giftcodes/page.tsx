@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Button, Card, Input, Select } from 'antd';
 import GiftcodeTable, { type GiftCodeDTO } from '@/components/GiftcodeTable';
 import Link from 'next/link';
@@ -19,7 +19,7 @@ export default function GiftcodesPage() {
   const [playerLimitType, setPlayerLimitType] = useState<'all' | GiftcodeRow['player_limit_type']>('all');
   const [expired, setExpired] = useState<'all' | 'yes' | 'no'>('all');
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     const params = new URLSearchParams();
     params.set('page', String(page));
@@ -36,11 +36,11 @@ export default function GiftcodesPage() {
       setTotal(json.pagination?.totalCount || 0);
     }
     setLoading(false);
-  };
+  }, [page, limit, code, active, playerLimitType, expired]);
 
   useEffect(() => {
     fetchData();
-  }, [page, limit, active, playerLimitType, expired]);
+  }, [page, limit, active, playerLimitType, expired, fetchData]);
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">

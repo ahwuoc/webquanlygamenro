@@ -17,7 +17,7 @@ interface Reward {
   reward_description?: string | null;
 }
 
-interface RewardsResponse { rewards: Reward[] }
+interface _RewardsResponse { rewards: Reward[] }
 
 export default function RewardsManager({
   taskMainId,
@@ -105,12 +105,12 @@ export default function RewardsManager({
     setDrawerOpen(true);
   };
 
-  const openEdit = (record: Reward) => {
+  const openEdit = useCallback((record: Reward) => {
     setIsEdit(true);
     setCurrentRecord(record);
     form.setFieldsValue({ ...record, reward_quantity: Number(record.reward_quantity) });
     setDrawerOpen(true);
-  };
+  }, [form]);
 
   const handleSubmit = async () => {
     try {
@@ -131,7 +131,7 @@ export default function RewardsManager({
     }
   };
 
-  const handleDelete = async (record: Reward) => {
+  const handleDelete = useCallback(async (record: Reward) => {
     try {
       await rewardsService.remove(record.id);
       message.success("Đã xóa reward");
@@ -140,7 +140,7 @@ export default function RewardsManager({
       console.error(e);
       message.error(e.message || "Xóa reward thất bại");
     }
-  };
+  }, [fetchData]);
 
   const typeColor = (t: string) => {
     switch (t) {
@@ -184,7 +184,7 @@ export default function RewardsManager({
         </Space>
       ),
     },
-  ], [getDisplayName]);
+  ], [getDisplayName, handleDelete, openEdit]);
 
   return (
     <Card

@@ -3,7 +3,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Card, Typography, Row, Col, Tag, Button, Space, Table, Input, Drawer, Form, InputNumber, message, Popconfirm } from "antd";
 import { EditOutlined, PlusOutlined, DeleteOutlined, ReloadOutlined, SearchOutlined } from "@ant-design/icons";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { tasksService } from "@/lib/api/tasks.service";
 
@@ -13,7 +12,7 @@ interface TaskMainTemplate {
   detail: string;
 }
 
-interface PaginatedTasksResponse {
+interface _PaginatedTasksResponse {
   tasks: TaskMainTemplate[];
   total: number;
   page: number;
@@ -70,12 +69,12 @@ export default function TasksManager() {
     setDrawerOpen(true);
   };
 
-  const openEdit = (record: TaskMainTemplate) => {
+  const openEdit = useCallback((record: TaskMainTemplate) => {
     setIsEdit(true);
     setCurrentRecord(record);
     form.setFieldsValue({ id: record.id, NAME: record.NAME, detail: record.detail });
     setDrawerOpen(true);
-  };
+  }, [form]);
 
   // Removed quick edit first sub feature per request
 
@@ -100,7 +99,7 @@ export default function TasksManager() {
     }
   };
 
-  const handleDelete = async (record: TaskMainTemplate) => {
+  const handleDelete = useCallback(async (record: TaskMainTemplate) => {
     try {
       await tasksService.remove(record.id);
       message.success("Đã xóa task");
@@ -109,7 +108,7 @@ export default function TasksManager() {
       console.error(e);
       message.error(e.message || "Xóa task thất bại");
     }
-  };
+  }, [fetchData, page, pageSize]);
 
   const handleBulkDelete = async () => {
     if (selectedRowKeys.length === 0) return;
@@ -183,7 +182,7 @@ export default function TasksManager() {
         ),
       },
     ],
-    [page, pageSize]
+    [handleDelete, openEdit, router]
   );
 
   const rowSelection = {

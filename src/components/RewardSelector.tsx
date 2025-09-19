@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, Button, Select, Tag, Input } from 'antd';
 
 interface RewardItem {

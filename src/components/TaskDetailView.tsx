@@ -14,7 +14,7 @@ export interface TaskData {
 }
 
 export default function TaskDetailView({ task }: { task: TaskData }) {
-  const router = useRouter();
+  const _router = useRouter();
   return (
     <div className="w-full space-y-6" style={{ padding: '0 16px' }}>
       <Breadcrumb
