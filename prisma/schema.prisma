@@ -52,6 +52,7 @@ model account {
   nrog8            Int              @default(0)
   mocnap           Int              @default(0)
   email            String?          @db.VarChar(255)
+  danap            Int?
   alichsunaptien   alichsunaptien[]
 }
 
@@ -706,6 +707,7 @@ model task_requirements {
   map_restriction  String?                            @db.VarChar(100)
   extra_data       String?                            @db.LongText
   is_active        Boolean?                           @default(true)
+  rewards          task_rewards[]
 
   @@index([target_id], map: "idx_target")
   @@index([task_main_id, task_sub_id], map: "idx_task")
@@ -714,28 +716,15 @@ model task_requirements {
 
 model task_rewards {
   id                 Int                      @id @default(autoincrement())
-  task_main_id       Int
-  task_sub_id        Int
+  requirement_id     Int
   reward_type        task_rewards_reward_type
   reward_id          Int?                     @default(0)
   reward_quantity    BigInt                   @default(1)
   reward_description String?                  @db.VarChar(200)
+  requirement        task_requirements        @relation(fields: [requirement_id], references: [id], onDelete: Cascade, map: "fk_task_rewards_requirement")
 
-  @@index([task_main_id, task_sub_id], map: "idx_task")
+  @@index([requirement_id], map: "idx_requirement")
   @@index([reward_type], map: "idx_type")
-}
-
-model task_sub_template {
-  task_main_id Int
-  NAME         String @db.VarChar(255)
-  max_count    Int    @default(-1)
-  notify       String @default("") @db.VarChar(255)
-  npc_id       Int    @default(-1)
-  map          Int
-  id           Int    @id @default(autoincrement())
-
-  @@index([task_main_id], map: "task_main_id")
-  @@index([task_main_id])
 }
 
 model type_item {
@@ -751,6 +740,17 @@ model type_map {
 model type_sell_item_shop {
   id   Int    @id @default(autoincrement())
   NAME String @db.VarChar(50)
+}
+
+model adminpanel {
+  id        Int     @id @default(autoincrement())
+  domain    String? @db.VarChar(255)
+  logo      String? @db.VarChar(255)
+  trangthai String  @db.VarChar(50)
+  android   String? @db.VarChar(255)
+  iphone    String? @db.VarChar(255)
+  windows   String? @db.VarChar(255)
+  java      String? @db.VarChar(255)
 }
 
 enum boss_texts_text_type {
@@ -773,14 +773,6 @@ enum task_requirements_requirement_type {
   USE_ITEM
 }
 
-enum task_rewards_reward_type {
-  ITEM
-  GOLD
-  EXP
-  RUBY
-  POWER_POINT
-}
-
 enum alichsunaptien_status {
   pending
   approved
@@ -792,4 +784,11 @@ enum gift_codes_player_limit_type {
   SPECIFIC_PLAYERS
   EXCLUDE_PLAYERS
   VIP_ONLY
+}
+
+enum task_rewards_reward_type {
+  ITEM
+  GOLD
+  EXP
+  RUBY
 }

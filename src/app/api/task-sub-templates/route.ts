@@ -10,17 +10,38 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20', 10);
     const skip = (page - 1) * limit;
 
-    const where = taskMainId ? { task_main_id: parseInt(taskMainId) } : {};
+    const where: any = {};
+    if (taskMainId) where.task_main_id = parseInt(taskMainId, 10);
 
-    const [subTasks, total] = await Promise.all([
-      prisma.task_sub_template.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { id: 'asc' },
-      }),
-      prisma.task_sub_template.count({ where }),
-    ]);
+    // Lấy requirements và group theo (task_main_id, task_sub_id)
+    const all = await prisma.task_requirements.findMany({
+      where,
+      orderBy: [{ task_main_id: 'asc' }, { task_sub_id: 'asc' }, { id: 'asc' }],
+    });
+
+    const groupsMap = new Map<string, { task_main_id: number; task_sub_id: number; max_count: number }>();
+    for (const r of all) {
+      const key = `${r.task_main_id}_${r.task_sub_id}`;
+      const prev = groupsMap.get(key);
+      const maxCount = Math.max(prev?.max_count ?? -1, r.target_count ?? 1);
+      groupsMap.set(key, { task_main_id: r.task_main_id, task_sub_id: r.task_sub_id, max_count: maxCount });
+    }
+
+    const grouped = Array.from(groupsMap.values());
+    const total = grouped.length;
+    const paged = grouped.slice(skip, skip + limit);
+
+    // Trả về cấu trúc tương tự sub template (compat) nhưng chỉ có trường cơ bản
+    const subTasks = paged.map(g => ({
+      id: undefined, // không còn id sub template
+      task_main_id: g.task_main_id,
+      NAME: null,
+      max_count: g.max_count,
+      notify: null,
+      npc_id: -1,
+      map: -1,
+      task_sub_id: g.task_sub_id,
+    }));
 
     return NextResponse.json({
       subTasks,
@@ -36,29 +57,7 @@ export async function GET(request: NextRequest) {
 }
 
 // POST /api/task-sub-templates - Tạo sub task mới
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const { task_main_id, NAME, max_count, notify, npc_id, map } = body;
-
-    if (!task_main_id || !NAME || map === undefined) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
-    }
-
-    const subTask = await prisma.task_sub_template.create({
-      data: {
-        task_main_id: parseInt(task_main_id),
-        NAME,
-        max_count: parseInt(max_count) || -1,
-        notify: notify || '',
-        npc_id: parseInt(npc_id) || -1,
-        map: parseInt(map),
-      },
-    });
-
-    return NextResponse.json(subTask, { status: 201 });
-  } catch (error) {
-    console.error('Error creating sub task:', error);
-    return NextResponse.json({ error: 'Failed to create sub task' }, { status: 500 });
-  }
+export async function POST(_request: NextRequest) {
+  // Deprecated theo thiết kế mới: Sub task được sinh ra từ task_requirements
+  return NextResponse.json({ error: 'Deprecated. Tạo sub task bằng cách tạo task_requirements tương ứng.' }, { status: 410 });
 }

@@ -10,9 +10,18 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
     const rewardId = parseInt(id, 10);
-    const reward = await prisma.task_rewards.findUnique({ where: { id: rewardId } });
+    const reward = await prisma.task_rewards.findUnique({ where: { id: rewardId }, include: { requirement: true } });
     if (!reward) return NextResponse.json({ error: 'Reward not found' }, { status: 404 });
-    return NextResponse.json(reward);
+    return NextResponse.json({
+      id: reward.id,
+      requirement_id: (reward as any).requirement_id ?? (reward as any).requirement_id,
+      reward_type: reward.reward_type,
+      reward_id: reward.reward_id,
+      reward_quantity: (reward.reward_quantity as any)?.toString?.() ?? (reward.reward_quantity as any),
+      reward_description: reward.reward_description,
+      task_main_id: (reward as any).requirement?.task_main_id,
+      task_sub_id: (reward as any).requirement?.task_sub_id,
+    });
   } catch (error) {
     console.error('Error fetching reward:', error);
     return NextResponse.json({ error: 'Failed to fetch reward' }, { status: 500 });
@@ -25,21 +34,30 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const { id } = await params;
     const rewardId = parseInt(id, 10);
     const body = await request.json();
-    const { task_main_id, task_sub_id, reward_type, reward_id, reward_quantity, reward_description } = body;
+    const { requirement_id, reward_type, reward_id, reward_quantity, reward_description } = body || {};
 
     const reward = await prisma.task_rewards.update({
       where: { id: rewardId },
       data: {
-        task_main_id: task_main_id !== undefined ? parseInt(task_main_id) : undefined,
-        task_sub_id: task_sub_id !== undefined ? parseInt(task_sub_id) : undefined,
-        reward_type,
+        requirement_id: requirement_id !== undefined ? parseInt(requirement_id) : undefined,
+        reward_type: reward_type !== undefined ? reward_type : undefined,
         reward_id: reward_id !== undefined ? parseInt(reward_id) : undefined,
         reward_quantity: reward_quantity !== undefined ? BigInt(reward_quantity) : undefined,
-        reward_description,
+        reward_description: reward_description !== undefined ? reward_description : undefined,
       },
+      include: { requirement: true },
     });
 
-    return NextResponse.json(reward);
+    return NextResponse.json({
+      id: reward.id,
+      requirement_id: (reward as any).requirement_id,
+      reward_type: reward.reward_type,
+      reward_id: reward.reward_id,
+      reward_quantity: (reward.reward_quantity as any)?.toString?.() ?? (reward.reward_quantity as any),
+      reward_description: reward.reward_description,
+      task_main_id: (reward as any).requirement?.task_main_id,
+      task_sub_id: (reward as any).requirement?.task_sub_id,
+    });
   } catch (error) {
     console.error('Error updating reward:', error);
     return NextResponse.json({ error: 'Failed to update reward' }, { status: 500 });

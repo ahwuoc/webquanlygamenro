@@ -55,17 +55,25 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const { id } = await params;
     const taskId = parseInt(id, 10);
 
-    // Xóa requirements và rewards trước
+
+    const requirements = await prisma.task_requirements.findMany({
+      where: { task_main_id: taskId },
+      select: { id: true }
+    });
+
+    // Xóa rewards của các requirements này
+    if (requirements.length > 0) {
+      await prisma.task_rewards.deleteMany({
+        where: {
+          requirement_id: {
+            in: requirements.map(req => req.id)
+          }
+        },
+      });
+    }
+
+    // Xóa requirements
     await prisma.task_requirements.deleteMany({
-      where: { task_main_id: taskId },
-    });
-
-    await prisma.task_rewards.deleteMany({
-      where: { task_main_id: taskId },
-    });
-
-    // Xóa sub tasks
-    await prisma.task_sub_template.deleteMany({
       where: { task_main_id: taskId },
     });
 

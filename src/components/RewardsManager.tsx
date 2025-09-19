@@ -7,11 +7,12 @@ import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined } from "@ant
 
 interface Reward {
   id: number;
-  task_main_id: number;
-  task_sub_id: number;
+  requirement_id?: number;
+  task_main_id?: number;
+  task_sub_id?: number;
   reward_type: string;
   reward_id: number;
-  reward_quantity: string | number; // backend may return bigint string
+  reward_quantity: string | number;
   reward_description?: string | null;
 }
 
@@ -54,7 +55,7 @@ export default function RewardsManager({ taskMainId }: { taskMainId: number }) {
             fetchData();
           }
         }
-      } catch {}
+      } catch { }
     };
     if (typeof window !== 'undefined') {
       window.addEventListener('task-sub-select', handler as EventListener);
@@ -219,7 +220,8 @@ export default function RewardsManager({ taskMainId }: { taskMainId: number }) {
                 { label: 'Item', value: 'ITEM' },
                 { label: 'EXP', value: 'EXP' },
                 { label: 'Gold', value: 'GOLD' },
-                { label: 'Other', value: 'OTHER' },
+                { label: 'Ruby', value: 'RUBY' },
+                { label: 'Power Point', value: 'POWER_POINT' },
               ]}
             />
           </Form.Item>

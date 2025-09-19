@@ -20,28 +20,40 @@ export async function GET(request: NextRequest) {
 
     // Fetch related data separately
     const taskIds = tasks.map(task => task.id);
-    const [subTemplates, requirements, rewards] = await Promise.all([
-      prisma.task_sub_template.findMany({
-        where: { task_main_id: { in: taskIds } },
-      }),
+    const [requirements, rewardsWithReq] = await Promise.all([
       prisma.task_requirements.findMany({
         where: { task_main_id: { in: taskIds } },
       }),
       prisma.task_rewards.findMany({
-        where: { task_main_id: { in: taskIds } },
+        where: { requirement: { task_main_id: { in: taskIds } } },
+        include: { requirement: true },
       }),
     ]);
 
     // Combine the data
-    const tasksWithRelations = tasks.map(task => ({
-      ...task,
-      task_sub_templates: subTemplates.filter(sub => sub.task_main_id === task.id),
-      task_requirements: requirements.filter(req => req.task_main_id === task.id),
-      task_rewards: rewards.filter(reward => reward.task_main_id === task.id).map(reward => ({
-        ...reward,
-        reward_quantity: reward.reward_quantity.toString(), // Convert BigInt to string
-      })),
-    }));
+    const tasksWithRelations = tasks.map(task => {
+      const reqs = requirements.filter(req => req.task_main_id === task.id);
+      const rws = rewardsWithReq
+        .filter(r => r.requirement?.task_main_id === task.id)
+        .map(r => ({
+          id: r.id,
+          requirement_id: (r as any).requirement_id,
+          reward_type: r.reward_type,
+          reward_id: r.reward_id,
+          reward_quantity: (r.reward_quantity as any)?.toString?.() ?? (r.reward_quantity as any),
+          reward_description: r.reward_description,
+        }));
+
+      // Backward-compatible key; this dataset is deprecated per docs. Return empty array.
+      const subTemplatesCompat: any[] = [];
+
+      return {
+        ...task,
+        task_sub_templates: subTemplatesCompat,
+        task_requirements: reqs,
+        task_rewards: rws,
+      };
+    });
 
     return NextResponse.json({
       tasks: tasksWithRelations,

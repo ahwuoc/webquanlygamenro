@@ -223,10 +223,12 @@ export default function RequirementsManager({ taskMainId }: { taskMainId: number
             <Select
               placeholder="Chọn loại requirement"
               options={[
-                { label: 'Kill', value: 'KILL' },
-                { label: 'Collect', value: 'COLLECT' },
-                { label: 'Talk', value: 'TALK' },
-                { label: 'Reach', value: 'REACH' },
+                { label: 'KILL_MOB', value: 'KILL_MOB' },
+                { label: 'KILL_BOSS', value: 'KILL_BOSS' },
+                { label: 'TALK_NPC', value: 'TALK_NPC' },
+                { label: 'PICK_ITEM', value: 'PICK_ITEM' },
+                { label: 'GO_TO_MAP', value: 'GO_TO_MAP' },
+                { label: 'USE_ITEM', value: 'USE_ITEM' },
               ]}
               showSearch
               allowClear
