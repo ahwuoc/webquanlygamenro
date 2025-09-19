@@ -23,7 +23,7 @@ export default function TaskRequirementsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-5xl mx-auto space-y-6">
+      <div className="w-full space-y-6" style={{ padding: '0 16px' }}>
         <Card>
           <Space>
             <Button icon={<LeftOutlined />} onClick={() => router.push(`/tasks/${taskMainId}`)}>Quay lại Task</Button>

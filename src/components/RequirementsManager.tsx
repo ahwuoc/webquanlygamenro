@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Card, Table, Button, Space, Drawer, Form, Input, InputNumber, message, Popconfirm, Typography, Row, Col, Tag, Select, Switch, Tooltip, Alert } from "antd";
 import { requirementsService } from "@/lib/api/requirements.service";
+import { useTemplateMapping } from '@/lib/api/templateMapping.service';
 import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined } from "@ant-design/icons";
 import { useRouter } from "next/navigation";
 
@@ -22,6 +23,7 @@ interface RequirementsResponse { requirements: Requirement[] }
 
 export default function RequirementsManager({ taskMainId }: { taskMainId: number }) {
   const router = useRouter();
+  const { getDisplayName } = useTemplateMapping();
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<Requirement[]>([]);
   const [filterType, setFilterType] = useState<string | undefined>(undefined);
@@ -123,9 +125,15 @@ export default function RequirementsManager({ taskMainId }: { taskMainId: number
 
   const columns = useMemo(() => [
     { title: "ID", dataIndex: "id", width: 80, render: (id: number) => <Tag>#{id}</Tag> },
-    { title: "Sub ID", dataIndex: "task_sub_id", width: 90 },
+    { title: "Sub ID", dataIndex: "task_sub_id", width: 90, render: (subId: number) => <Tag color="blue">Nhiệm vụ Con {subId}</Tag> },
     { title: "Type", dataIndex: "requirement_type", render: (t: string) => <Tag color={typeColor(t)}>{t}</Tag> },
-    { title: "Target ID", dataIndex: "target_id", width: 100 },
+    {
+      title: "Target ID", dataIndex: "target_id", width: 200, render: (targetId: number, record: Requirement) => (
+        <Tooltip title={`ID: ${targetId}`}>
+          <Typography.Text>{getDisplayName(record.requirement_type, targetId)}</Typography.Text>
+        </Tooltip>
+      )
+    },
     { title: "Count", dataIndex: "target_count", width: 90 },
     { title: "Map", dataIndex: "map_restriction", ellipsis: true, render: (v: string) => v ? <Tooltip title={v}><Typography.Text>{v}</Typography.Text></Tooltip> : <Typography.Text type="secondary">—</Typography.Text> },
     { title: "Extra", dataIndex: "extra_data", ellipsis: true, render: (v: string) => v ? <Tooltip title={v}><Typography.Text>{v}</Typography.Text></Tooltip> : <Typography.Text type="secondary">—</Typography.Text> },
@@ -143,7 +151,7 @@ export default function RequirementsManager({ taskMainId }: { taskMainId: number
         </Space>
       ),
     },
-  ], []);
+  ], [getDisplayName]);
 
   return (
     <Card
@@ -195,7 +203,7 @@ export default function RequirementsManager({ taskMainId }: { taskMainId: number
         dataSource={data}
         locale={{ emptyText: 'Chưa có Requirement nào. Hãy bấm "Thêm Requirement".' }}
         pagination={false}
-        scroll={{ x: 800 }}
+        scroll={{ x: 1200 }}
       />
 
       <Drawer

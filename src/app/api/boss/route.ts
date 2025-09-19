@@ -5,10 +5,12 @@ export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
         const page = parseInt(searchParams.get('page') || '1');
-        const limit = parseInt(searchParams.get('limit') || '10');
+        const limitParam = searchParams.get('limit') || '10';
+        const unlimited = limitParam.toLowerCase() === 'all' || parseInt(limitParam) <= 0;
+        const limit = unlimited ? undefined : parseInt(limitParam);
         const search = searchParams.get('search') || '';
         const status = searchParams.get('status') || 'all';
-        const offset = (page - 1) * limit;
+        const offset = unlimited ? 0 : (page - 1) * (limit || 10);
         const where: any = {};
         if (search) {
             where.name = {
@@ -23,7 +25,7 @@ export async function GET(request: NextRequest) {
         const [bosses, totalCount] = await Promise.all([
             prisma.bosses.findMany({
                 where,
-                skip: offset,
+                skip: unlimited ? undefined : offset,
                 take: limit,
                 orderBy: {
                     created_at: 'desc',
@@ -42,9 +44,9 @@ export async function GET(request: NextRequest) {
             bosses,
             pagination: {
                 page,
-                limit,
+                limit: unlimited ? totalCount : limit,
                 totalCount,
-                totalPages: Math.ceil(totalCount / limit),
+                totalPages: unlimited ? 1 : Math.ceil(totalCount / (limit || 1)),
             },
         });
     } catch (error) {

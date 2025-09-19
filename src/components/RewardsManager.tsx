@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Card, Table, Button, Space, Drawer, Form, Input, InputNumber, message, Popconfirm, Typography, Row, Col, Tag, Select, Tooltip, Alert } from "antd";
 import { rewardsService } from "@/lib/api/rewards.service";
+import { useTemplateMapping } from '@/lib/api/templateMapping.service';
 import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined } from "@ant-design/icons";
 
 interface Reward {
@@ -25,6 +26,7 @@ export default function RewardsManager({
   taskMainId: number;
   requirementId?: number;
 }) {
+  const { getDisplayName } = useTemplateMapping();
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<Reward[]>([]);
   const [filterType, setFilterType] = useState<string | undefined>(undefined);
@@ -153,9 +155,20 @@ export default function RewardsManager({
 
   const columns = useMemo(() => [
     { title: "ID", dataIndex: "id", width: 80, render: (id: number) => <Tag>#{id}</Tag> },
-    { title: "Sub ID", dataIndex: "task_sub_id", width: 90 },
+    { title: "Sub ID", dataIndex: "task_sub_id", width: 90, render: (subId: number) => <Tag color="blue">Nhiệm vụ Con {subId}</Tag> },
     { title: "Type", dataIndex: "reward_type", render: (t: string) => <Tag color={typeColor(t)}>{t}</Tag> },
-    { title: "Reward ID", dataIndex: "reward_id", width: 110 },
+    {
+      title: "Reward ID", dataIndex: "reward_id", width: 200, render: (rewardId: number, record: Reward) => {
+        if (record.reward_type === 'ITEM' && rewardId > 0) {
+          return (
+            <Tooltip title={`ID: ${rewardId}`}>
+              <Typography.Text>{getDisplayName('PICK_ITEM', rewardId)}</Typography.Text>
+            </Tooltip>
+          );
+        }
+        return <Typography.Text>{rewardId}</Typography.Text>;
+      }
+    },
     { title: "Qty", dataIndex: "reward_quantity", width: 110, render: (q: string | number) => String(q) },
     { title: "Desc", dataIndex: "reward_description", ellipsis: true, render: (v: string) => v ? <Tooltip title={v}><Typography.Text>{v}</Typography.Text></Tooltip> : <Typography.Text type="secondary">—</Typography.Text> },
     {
@@ -171,7 +184,7 @@ export default function RewardsManager({
         </Space>
       ),
     },
-  ], []);
+  ], [getDisplayName]);
 
   return (
     <Card
@@ -223,7 +236,7 @@ export default function RewardsManager({
         dataSource={data}
         pagination={false}
         locale={{ emptyText: 'Chưa có Reward nào. Hãy bấm "Thêm Reward".' }}
-        scroll={{ x: 800 }}
+        scroll={{ x: 1200 }}
       />
 
       <Drawer

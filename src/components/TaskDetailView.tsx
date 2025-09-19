@@ -1,8 +1,8 @@
 "use client";
 
 import React from 'react';
-import { Card, Typography, Space, Button, Tag, Descriptions, Breadcrumb, Alert, Steps } from 'antd';
-import { LeftOutlined, EditOutlined, ProfileOutlined, GiftOutlined, ApartmentOutlined } from '@ant-design/icons';
+import { Card, Typography, Space, Button, Tag, Descriptions, Breadcrumb } from 'antd';
+import { LeftOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import TaskDetailTabs from '@/components/TaskDetailTabs';
@@ -16,7 +16,7 @@ export interface TaskData {
 export default function TaskDetailView({ task }: { task: TaskData }) {
   const router = useRouter();
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="w-full space-y-6" style={{ padding: '0 16px' }}>
       <Breadcrumb
         items={[
           { title: <Link href="/">Home</Link> },
@@ -25,30 +25,6 @@ export default function TaskDetailView({ task }: { task: TaskData }) {
         ]}
       />
 
-      <Alert
-        message="Workflow quản lý Task"
-        description={
-          <div>
-            <div>1) Tạo hoặc chỉnh sửa Main Task</div>
-            <div>2) Thêm các Sub Task</div>
-            <div>3) Với từng Sub Task, cấu hình Requirements và Rewards</div>
-          </div>
-        }
-        type="info"
-        showIcon
-      />
-
-      <Card>
-        <Steps
-          size="small"
-          items={[
-            { title: 'Main Task', description: 'Tên, mô tả' },
-            { title: 'Sub Tasks', description: 'Các bước con' },
-            { title: 'Reqs & Rewards', description: 'Điều kiện & thưởng' },
-          ]}
-        />
-      </Card>
-      {/* Header */}
       <Card>
         <Space align="center" size={16} style={{ width: '100%', justifyContent: 'space-between' }}>
           <Space align="center" size={16}>
@@ -80,15 +56,6 @@ export default function TaskDetailView({ task }: { task: TaskData }) {
         </Descriptions>
       </Card>
 
-      {/* Actions */}
-      <Card title="Hành động">
-        <Space wrap>
-          <Button type="primary" icon={<EditOutlined />}>Chỉnh sửa Task</Button>
-          <Button icon={<ApartmentOutlined />} onClick={() => router.push(`/tasks/${task.id}/subtasks`)}>Xem Sub Tasks</Button>
-          <Button icon={<ProfileOutlined />} onClick={() => router.push(`/tasks/${task.id}/requirements`)}>Xem Requirements</Button>
-          <Button icon={<GiftOutlined />} onClick={() => router.push(`/tasks/${task.id}/rewards`)}>Xem Rewards</Button>
-        </Space>
-      </Card>
 
       {/* Management Tabs */}
       <TaskDetailTabs taskId={task.id} />
