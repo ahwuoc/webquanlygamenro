@@ -28,10 +28,10 @@ export default function MapSelector({ value, onChange, error }: MapSelectorProps
     useEffect(() => {
         const fetchMaps = async () => {
             try {
-                const response = await fetch('/api/maps');
+                const response = await fetch('/api/maps?limit=all');
                 if (response.ok) {
-                    const mapsData = await response.json();
-                    setMaps(mapsData);
+                    const responseData = await response.json();
+                    setMaps(responseData.maps || responseData);
                 }
             } catch (error) {
                 console.error('Error fetching maps:', error);

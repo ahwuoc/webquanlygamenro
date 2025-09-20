@@ -26,8 +26,8 @@ interface Requirement {
 export default function RequirementEditPage() {
     const router = useRouter();
     const params = useParams();
-    const taskId = parseInt(params.id as string);
-    const reqId = parseInt(params.reqId as string);
+    const taskId = parseInt(params?.id as string || '0');
+    const reqId = parseInt(params?.reqId as string || '0');
     const { getDisplayName } = useTemplateMapping();
 
     const [loading, setLoading] = useState(true);
