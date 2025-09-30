@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Card, Form, Input, InputNumber, Select, Button, message, Space, Divider, Table, Popconfirm } from 'antd';
+import { Card, Form, Input, InputNumber, Select, Button, message, Space, Divider, Table, Popconfirm, Switch } from 'antd';
 import { SaveOutlined, ArrowLeftOutlined, PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 
 const { Option } = Select;
@@ -14,12 +14,14 @@ interface MapFormProps {
 }
 
 interface NPC {
+    key: string;
     id: number;
     x: number;
     y: number;
 }
 
 interface Mob {
+    key: string;
     id: number;
     level: number;
     hp: number;
@@ -43,22 +45,43 @@ interface NPCTemplate {
     avatar: number;
 }
 
+interface Waypoint {
+    key: string;
+    name: string;
+    minX: number;
+    minY: number;
+    maxX: number;
+    maxY: number;
+    isEnter: boolean;
+    isOffline: boolean;
+    goMap: number;
+    goX: number;
+    goY: number;
+}
+
+interface MapOption {
+    id: number;
+    NAME: string;
+}
+
 export default function MapForm({ mapId, initialData }: MapFormProps) {
     const [form] = Form.useForm();
     const [loading, setLoading] = useState(false);
     const [npcs, setNpcs] = useState<NPC[]>([]);
     const [mobs, setMobs] = useState<Mob[]>([]);
+    const [waypoints, setWaypoints] = useState<Waypoint[]>([]);
     const [mobTemplates, setMobTemplates] = useState<MobTemplate[]>([]);
     const [npcTemplates, setNpcTemplates] = useState<NPCTemplate[]>([]);
+    const [mapOptions, setMapOptions] = useState<MapOption[]>([]);
     const router = useRouter();
 
     useEffect(() => {
-        // Fetch mob and npc templates
         const fetchTemplates = async () => {
             try {
-                const [mobResponse, npcResponse] = await Promise.all([
+                const [mobResponse, npcResponse, mapsResponse] = await Promise.all([
                     fetch('/api/mob-templates?limit=1000'),
-                    fetch('/api/npc-templates?limit=1000')
+                    fetch('/api/npc-templates?limit=1000'),
+                    fetch('/api/maps?limit=all')
                 ]);
 
                 if (mobResponse.ok) {
@@ -70,6 +93,11 @@ export default function MapForm({ mapId, initialData }: MapFormProps) {
                     const npcData = await npcResponse.json();
                     setNpcTemplates(npcData.npcs || []);
                 }
+
+                if (mapsResponse.ok) {
+                    const mapsData = await mapsResponse.json();
+                    setMapOptions(mapsData.maps || []);
+                }
             } catch (error) {
                 console.error('Error fetching templates:', error);
             }
@@ -80,7 +108,8 @@ export default function MapForm({ mapId, initialData }: MapFormProps) {
         // Parse NPCs from initial data
         try {
             const npcsData = JSON.parse(initialData.npcs || '[]');
-            const parsedNpcs = npcsData.map((npc: number[]) => ({
+            const parsedNpcs = npcsData.map((npc: number[], idx: number) => ({
+                key: `npc-${idx}-${Math.random().toString(36).slice(2)}`,
                 id: npc[0] || 0,
                 x: npc[1] || 0,
                 y: npc[2] || 0,
@@ -93,7 +122,8 @@ export default function MapForm({ mapId, initialData }: MapFormProps) {
         // Parse Mobs from initial data
         try {
             const mobsData = JSON.parse(initialData.mobs || '[]');
-            const parsedMobs = mobsData.map((mob: number[]) => ({
+            const parsedMobs = mobsData.map((mob: number[], idx: number) => ({
+                key: `mob-${idx}-${Math.random().toString(36).slice(2)}`,
                 id: mob[0] || 0,
                 level: mob[1] || 1,
                 hp: mob[2] || 100,
@@ -119,10 +149,31 @@ export default function MapForm({ mapId, initialData }: MapFormProps) {
             data: initialData.data,
             waypoints: initialData.waypoints,
         });
+
+        // Parse Waypoints from initial data (server structure: [name, minX, minY, maxX, maxY, isEnter, isOffline, goMap, goX, goY])
+        try {
+            const wps = JSON.parse(initialData.waypoints || '[]') as any[];
+            const parsed: Waypoint[] = (Array.isArray(wps) ? wps : []).map((wp: any[], idx: number) => ({
+                key: `wp-${idx}-${Math.random().toString(36).slice(2)}`,
+                name: (wp?.[0] ?? '').toString(),
+                minX: Number(wp?.[1] ?? 0),
+                minY: Number(wp?.[2] ?? 0),
+                maxX: Number(wp?.[3] ?? 0),
+                maxY: Number(wp?.[4] ?? 0),
+                isEnter: Boolean(wp?.[5] ?? 0),
+                isOffline: Boolean(wp?.[6] ?? 0),
+                goMap: Number(wp?.[7] ?? 0),
+                goX: Number(wp?.[8] ?? 0),
+                goY: Number(wp?.[9] ?? 0),
+            }));
+            setWaypoints(parsed);
+        } catch {
+            setWaypoints([]);
+        }
     }, [initialData, form]);
 
     const addNpc = () => {
-        const newNpc: NPC = { id: 0, x: 0, y: 0 };
+        const newNpc: NPC = { key: `npc-${Date.now()}-${Math.random().toString(36).slice(2)}`, id: 0, x: 0, y: 0 };
         setNpcs([...npcs, newNpc]);
     };
 
@@ -138,7 +189,7 @@ export default function MapForm({ mapId, initialData }: MapFormProps) {
     };
 
     const addMob = () => {
-        const newMob: Mob = { id: 0, level: 1, hp: 100, x: 0, y: 0 };
+        const newMob: Mob = { key: `mob-${Date.now()}-${Math.random().toString(36).slice(2)}`, id: 0, level: 1, hp: 100, x: 0, y: 0 };
         setMobs([...mobs, newMob]);
     };
 
@@ -161,11 +212,29 @@ export default function MapForm({ mapId, initialData }: MapFormProps) {
         return JSON.stringify(mobs.map(mob => [mob.id, mob.level, mob.hp, mob.x, mob.y]));
     };
 
+    const convertWaypointsToJson = () => {
+        // Convert to server array structure
+        const arr = waypoints.map(wp => [
+            wp.name,
+            wp.minX,
+            wp.minY,
+            wp.maxX,
+            wp.maxY,
+            wp.isEnter ? 1 : 0,
+            wp.isOffline ? 1 : 0,
+            wp.goMap,
+            wp.goX,
+            wp.goY,
+        ]);
+        return JSON.stringify(arr);
+    };
+
     const handleSubmit = async (values: any) => {
         setLoading(true);
         try {
             const npcsJson = convertNpcsToJson();
             const mobsJson = convertMobsToJson();
+            const waypointsJson = convertWaypointsToJson();
 
             const response = await fetch(`/api/maps/${mapId}`, {
                 method: 'PUT',
@@ -176,6 +245,7 @@ export default function MapForm({ mapId, initialData }: MapFormProps) {
                     ...values,
                     npcs: npcsJson,
                     mobs: mobsJson,
+                    waypoints: waypointsJson,
                 }),
             });
 
@@ -377,7 +447,7 @@ export default function MapForm({ mapId, initialData }: MapFormProps) {
 
     return (
         <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-none mx-auto">
                 {/* Header */}
                 <div className="mb-8">
                     <div className="flex items-center justify-between">
@@ -499,7 +569,7 @@ export default function MapForm({ mapId, initialData }: MapFormProps) {
                             <Table
                                 columns={npcColumns}
                                 dataSource={npcs}
-                                rowKey={(record, index) => `npc-${index}`}
+                                rowKey="key"
                                 pagination={false}
                                 size="small"
                                 locale={{ emptyText: 'Chưa có NPC nào' }}
@@ -531,10 +601,10 @@ export default function MapForm({ mapId, initialData }: MapFormProps) {
                             <Table
                                 columns={mobColumns}
                                 dataSource={mobs}
-                                rowKey={(record, index) => `mob-${index}`}
+                                rowKey="key"
                                 pagination={false}
                                 size="small"
-                                scroll={{ x: 700 }}
+                                scroll={undefined}
                                 locale={{ emptyText: 'Chưa có Mob nào' }}
                             />
 
@@ -549,6 +619,199 @@ export default function MapForm({ mapId, initialData }: MapFormProps) {
                         </div>
 
                         <Divider />
+
+                        {/* Waypoints Manager */}
+                        <div>
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-lg font-semibold">Quản Lý Waypoints</h3>
+                                <Button
+                                    type="primary"
+                                    icon={<PlusOutlined />}
+                                    onClick={() => setWaypoints([
+                                        ...waypoints,
+                                        { key: `wp-${Date.now()}-${Math.random().toString(36).slice(2)}`, name: '', minX: 0, minY: 0, maxX: 0, maxY: 0, isEnter: false, isOffline: false, goMap: 0, goX: 0, goY: 0 }
+                                    ])}
+                                >
+                                    Thêm Waypoint
+                                </Button>
+                            </div>
+
+                            <Table
+                                dataSource={waypoints}
+                                rowKey="key"
+                                pagination={false}
+                                size="small"
+                                scroll={undefined}
+                                locale={{ emptyText: 'Chưa có waypoint nào' }}
+                                columns={[
+                                    {
+                                        title: 'Tên',
+                                        dataIndex: 'name',
+                                        key: 'name',
+                                        width: 180,
+                                        render: (value: string, record: Waypoint, index: number) => (
+                                            <Input value={value} onChange={(e) => {
+                                                const next = [...waypoints];
+                                                next[index] = { ...next[index], name: e.target.value };
+                                                setWaypoints(next);
+                                            }} />
+                                        ),
+                                    },
+                                    {
+                                        title: 'minX',
+                                        dataIndex: 'minX',
+                                        key: 'minX',
+                                        width: 90,
+                                        render: (value: number, record: Waypoint, index: number) => (
+                                            <InputNumber value={value} onChange={(val) => {
+                                                const next = [...waypoints];
+                                                next[index] = { ...next[index], minX: Number(val || 0) };
+                                                setWaypoints(next);
+                                            }} style={{ width: '100%' }} />
+                                        ),
+                                    },
+                                    {
+                                        title: 'minY',
+                                        dataIndex: 'minY',
+                                        key: 'minY',
+                                        width: 90,
+                                        render: (value: number, record: Waypoint, index: number) => (
+                                            <InputNumber value={value} onChange={(val) => {
+                                                const next = [...waypoints];
+                                                next[index] = { ...next[index], minY: Number(val || 0) };
+                                                setWaypoints(next);
+                                            }} style={{ width: '100%' }} />
+                                        ),
+                                    },
+                                    {
+                                        title: 'maxX',
+                                        dataIndex: 'maxX',
+                                        key: 'maxX',
+                                        width: 90,
+                                        render: (value: number, record: Waypoint, index: number) => (
+                                            <InputNumber value={value} onChange={(val) => {
+                                                const next = [...waypoints];
+                                                next[index] = { ...next[index], maxX: Number(val || 0) };
+                                                setWaypoints(next);
+                                            }} style={{ width: '100%' }} />
+                                        ),
+                                    },
+                                    {
+                                        title: 'maxY',
+                                        dataIndex: 'maxY',
+                                        key: 'maxY',
+                                        width: 90,
+                                        render: (value: number, record: Waypoint, index: number) => (
+                                            <InputNumber value={value} onChange={(val) => {
+                                                const next = [...waypoints];
+                                                next[index] = { ...next[index], maxY: Number(val || 0) };
+                                                setWaypoints(next);
+                                            }} style={{ width: '100%' }} />
+                                        ),
+                                    },
+                                    {
+                                        title: 'isEnter',
+                                        dataIndex: 'isEnter',
+                                        key: 'isEnter',
+                                        width: 90,
+                                        render: (value: boolean, record: Waypoint, index: number) => (
+                                            <Switch checked={!!value} onChange={(checked) => {
+                                                const next = [...waypoints];
+                                                next[index] = { ...next[index], isEnter: checked };
+                                                setWaypoints(next);
+                                            }} />
+                                        ),
+                                    },
+                                    {
+                                        title: 'isOffline',
+                                        dataIndex: 'isOffline',
+                                        key: 'isOffline',
+                                        width: 100,
+                                        render: (value: boolean, record: Waypoint, index: number) => (
+                                            <Switch checked={!!value} onChange={(checked) => {
+                                                const next = [...waypoints];
+                                                next[index] = { ...next[index], isOffline: checked };
+                                                setWaypoints(next);
+                                            }} />
+                                        ),
+                                    },
+                                    {
+                                        title: 'goMap',
+                                        dataIndex: 'goMap',
+                                        key: 'goMap',
+                                        width: 260,
+                                        render: (value: number, record: Waypoint, index: number) => (
+                                            <Select
+                                                value={value}
+                                                onChange={(val) => {
+                                                    const next = [...waypoints];
+                                                    next[index] = { ...next[index], goMap: Number(val || 0) };
+                                                    setWaypoints(next);
+                                                }}
+                                                showSearch
+                                                placeholder="Chọn Map đích"
+                                                optionFilterProp="children"
+                                                filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+                                                style={{ width: '100%' }}
+                                                options={mapOptions.map((m) => ({ value: m.id, label: `${m.NAME} (ID: ${m.id})` }))}
+                                                size="small"
+                                            />
+                                        ),
+                                    },
+                                    {
+                                        title: 'goX',
+                                        dataIndex: 'goX',
+                                        key: 'goX',
+                                        width: 90,
+                                        render: (value: number, record: Waypoint, index: number) => (
+                                            <InputNumber value={value} onChange={(val) => {
+                                                const next = [...waypoints];
+                                                next[index] = { ...next[index], goX: Number(val || 0) };
+                                                setWaypoints(next);
+                                            }} style={{ width: '100%' }} />
+                                        ),
+                                    },
+                                    {
+                                        title: 'goY',
+                                        dataIndex: 'goY',
+                                        key: 'goY',
+                                        width: 90,
+                                        render: (value: number, record: Waypoint, index: number) => (
+                                            <InputNumber value={value} onChange={(val) => {
+                                                const next = [...waypoints];
+                                                next[index] = { ...next[index], goY: Number(val || 0) };
+                                                setWaypoints(next);
+                                            }} style={{ width: '100%' }} />
+                                        ),
+                                    },
+                                    {
+                                        title: 'Hành Động',
+                                        key: 'action',
+                                        width: 100,
+                                        fixed: 'right' as const,
+                                        render: (_: any, __: Waypoint, index: number) => (
+                                            <Popconfirm
+                                                title="Xóa waypoint này?"
+                                                onConfirm={() => setWaypoints(waypoints.filter((_, i) => i !== index))}
+                                                okText="Xóa"
+                                                cancelText="Hủy"
+                                            >
+                                                <Button type="text" danger icon={<DeleteOutlined />} />
+                                            </Popconfirm>
+                                        ),
+                                    },
+                                ]}
+                            />
+
+                            <div className="mt-4 text-sm text-gray-500">
+                                <p><strong>Hướng dẫn:</strong></p>
+                                <p>• name: Tên waypoint hiển thị cho người chơi</p>
+                                <p>• minX/minY/maxX/maxY: Vùng va chạm/điểm vào</p>
+                                <p>• isEnter: Cho phép vào map khác khi chạm</p>
+                                <p>• isOffline: Cho phép di chuyển khi đang offline</p>
+                                <p>• goMap/goX/goY: Map đích và toạ độ sau khi chuyển</p>
+                            </div>
+                        </div>
 
                         {/* Submit Button */}
                         <Form.Item>

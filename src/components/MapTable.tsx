@@ -121,13 +121,10 @@ export default function MapTable({ dataSource, pagination = false, loading = fal
         {
             title: 'Hành Động',
             key: 'actions',
-            width: 200,
+            width: 120,
             render: (record: any) => (
                 <div className="flex space-x-2">
-                    <Button size="small" type="default">
-                        <Link href={`/maps/${record.id}`}>Xem</Link>
-                    </Button>
-                    <Button size="small" type="default">
+                    <Button size="small" type="primary">
                         <Link href={`/maps/${record.id}/edit`}>Sửa</Link>
                     </Button>
                 </div>

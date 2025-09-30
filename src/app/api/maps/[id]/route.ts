@@ -86,12 +86,21 @@ export async function PUT(
             );
         }
 
-        // Validate JSON fields for mobs only (NPCs are handled in frontend)
+        // Validate JSON fields for mobs and waypoints (NPCs are handled in frontend)
         try {
             if (body.mobs) JSON.parse(body.mobs);
         } catch {
             return NextResponse.json(
                 { error: 'Invalid JSON format for mobs' },
+                { status: 400 }
+            );
+        }
+
+        try {
+            if (body.waypoints) JSON.parse(body.waypoints);
+        } catch {
+            return NextResponse.json(
+                { error: 'Invalid JSON format for waypoints' },
                 { status: 400 }
             );
         }
@@ -106,12 +115,12 @@ export async function PUT(
                 max_player: body.max_player,
                 type: body.type !== undefined ? body.type : existingMap.type,
                 planet_id: body.planet_id !== undefined ? body.planet_id : existingMap.planet_id,
-                // Keep original values for complex fields
+                // Keep original values for complex fields (unless provided)
                 bg_type: existingMap.bg_type,
                 tile_id: existingMap.tile_id,
                 bg_id: existingMap.bg_id,
                 data: existingMap.data,
-                waypoints: existingMap.waypoints,
+                waypoints: body.waypoints || existingMap.waypoints,
                 // Allow editing mobs and npcs
                 mobs: body.mobs || existingMap.mobs,
                 npcs: body.npcs || existingMap.npcs,
