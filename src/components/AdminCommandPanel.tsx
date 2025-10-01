@@ -663,7 +663,7 @@ export default function AdminCommandPanel() {
         <ClusterOutlined /> Admin Command Panel
       </Title>
       <Paragraph type="secondary">
-        Gửi commands đến Standalone Admin Server (localhost:9090/admin) để quản lý game server độc lập.
+        Gửi commands đến Standalone Admin Server (36.50.135.62:9090/admin) để quản lý game server độc lập.
       </Paragraph>
 
       <Tabs defaultActiveKey="status" type="card" items={tabItems} />

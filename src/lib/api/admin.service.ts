@@ -10,7 +10,7 @@ interface AdminResponse {
 }
 
 class AdminService {
-  private defaultBaseUrl = 'http://localhost:9090/admin';
+  private defaultBaseUrl = 'http://36.50.135.62:9090/admin';
 
   private getBaseUrl(): string {
     if (typeof window !== 'undefined') {

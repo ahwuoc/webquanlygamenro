@@ -13,7 +13,7 @@ interface ServerConfig {
 export default function AdminServerConfig() {
   const [form] = Form.useForm();
   const [config, setConfig] = useState<ServerConfig>({ 
-    baseUrl: process.env.NEXT_PUBLIC_ADMIN_SERVER_URL || 'http://localhost:9090/admin' 
+    baseUrl: process.env.NEXT_PUBLIC_ADMIN_SERVER_URL || 'http://36.50.135.62:9090/admin' 
   });
 
   useEffect(() => {
@@ -47,7 +47,7 @@ export default function AdminServerConfig() {
   };
 
   const resetToDefault = () => {
-    const defaultConfig = { baseUrl: 'http://localhost:9090/admin' };
+    const defaultConfig = { baseUrl: 'http://36.50.135.62:9090/admin' };
     form.setFieldsValue(defaultConfig);
     setConfig(defaultConfig);
     localStorage.removeItem('admin-server-config');
@@ -66,7 +66,7 @@ export default function AdminServerConfig() {
     >
       <Alert
         message="Thông tin"
-        description="Thay đổi URL của Standalone Admin Server nếu server chạy trên VPS hoặc port khác. Mặc định: localhost:9090/admin"
+        description="Thay đổi URL của Standalone Admin Server nếu server chạy trên VPS hoặc port khác. Mặc định: 36.50.135.62:9090/admin"
         type="info"
         showIcon
         style={{ marginBottom: 16 }}
@@ -87,7 +87,7 @@ export default function AdminServerConfig() {
           ]}
         >
           <Input
-            placeholder="http://your-vps-ip:9090/admin"
+            placeholder="http://36.50.135.62:9090/admin"
             addonBefore="URL:"
           />
         </Form.Item>
