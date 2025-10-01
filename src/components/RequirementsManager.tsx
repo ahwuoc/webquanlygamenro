@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Card, Table, Button, Space, Drawer, Form, Input, InputNumber, message, Popconfirm, Typography, Row, Col, Tag, Select, Switch, Tooltip } from "antd";
+import { Card, Table, Button, Space, Form, Input, InputNumber, message, Popconfirm, Typography, Row, Col, Tag, Select, Switch, Tooltip } from "antd";
 import { requirementsService } from "@/lib/api/requirements.service";
 import { useTemplateMapping } from '@/lib/api/templateMapping.service';
 import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined } from "@ant-design/icons";
@@ -23,7 +23,7 @@ interface _RequirementsResponse { requirements: Requirement[] }
 
 export default function RequirementsManager({ taskMainId }: { taskMainId: number }) {
   const router = useRouter();
-  const { getDisplayName } = useTemplateMapping();
+  const { templates, loading: templatesLoading, getDisplayName } = useTemplateMapping();
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<Requirement[]>([]);
   const [filterType, setFilterType] = useState<string | undefined>(undefined);
@@ -33,6 +33,38 @@ export default function RequirementsManager({ taskMainId }: { taskMainId: number
   const [isEdit, setIsEdit] = useState(false);
   const [currentRecord, setCurrentRecord] = useState<Requirement | null>(null);
   const [form] = Form.useForm();
+  const requirementType = Form.useWatch('requirement_type', form);
+
+  // Reset target when requirement type changes to avoid stale pairings
+  useEffect(() => {
+    form.setFieldsValue({ target_id: undefined });
+  }, [requirementType, form]);
+
+  const targetOptions = useMemo(() => {
+    if (!templates) return [] as { label: string; value: number }[];
+    let list: { id: number; NAME: string }[] = [];
+    switch (requirementType) {
+      case 'TALK_NPC':
+        list = templates.npcs || [];
+        break;
+      case 'KILL_MOB':
+        list = templates.mobs || [];
+        break;
+      case 'KILL_BOSS':
+        list = templates.bosses || [];
+        break;
+      case 'PICK_ITEM':
+      case 'USE_ITEM':
+        list = templates.items || [];
+        break;
+      case 'GO_TO_MAP':
+        list = templates.maps || [];
+        break;
+      default:
+        list = [];
+    }
+    return list.map((x) => ({ label: `${x.NAME} (#${x.id})`, value: x.id }));
+  }, [templates, requirementType]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -206,58 +238,72 @@ export default function RequirementsManager({ taskMainId }: { taskMainId: number
         scroll={{ x: 1200 }}
       />
 
-      <Drawer
-        title={isEdit ? `Chỉnh sửa Requirement #${currentRecord?.id}` : `Thêm Requirement cho Task #${taskMainId}`}
-        width={600}
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        destroyOnClose
-        footer={
-          <Space style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <Button onClick={() => setDrawerOpen(false)}>Hủy</Button>
-            <Button type="primary" onClick={handleSubmit}>{isEdit ? 'Lưu' : 'Tạo mới'}</Button>
-          </Space>
-        }
-      >
-        <Form form={form} layout="vertical" initialValues={{ task_main_id: taskMainId, task_sub_id: 0, target_count: 1, is_active: true }}>
-          <Form.Item name="task_main_id" label="Task Main ID" rules={[{ required: true }]}>
-            <InputNumber min={1} style={{ width: '100%' }} disabled />
-          </Form.Item>
-          <Form.Item name="task_sub_id" label="Task Sub ID" rules={[{ required: true, message: 'Nhập task_sub_id' }]}>
-            <InputNumber min={0} style={{ width: '100%' }} />
-          </Form.Item>
-          <Form.Item name="requirement_type" label="Requirement Type" rules={[{ required: true, message: 'Nhập requirement type' }]}>
-            <Select
-              placeholder="Chọn loại requirement"
-              options={[
-                { label: 'KILL_MOB', value: 'KILL_MOB' },
-                { label: 'KILL_BOSS', value: 'KILL_BOSS' },
-                { label: 'TALK_NPC', value: 'TALK_NPC' },
-                { label: 'PICK_ITEM', value: 'PICK_ITEM' },
-                { label: 'GO_TO_MAP', value: 'GO_TO_MAP' },
-                { label: 'USE_ITEM', value: 'USE_ITEM' },
-              ]}
-              showSearch
-              allowClear
-            />
-          </Form.Item>
-          <Form.Item name="target_id" label="Target ID" rules={[{ required: true, message: 'Nhập target_id' }]}>
-            <InputNumber style={{ width: '100%' }} />
-          </Form.Item>
-          <Form.Item name="target_count" label="Target Count">
-            <InputNumber min={1} style={{ width: '100%' }} />
-          </Form.Item>
-          <Form.Item name="map_restriction" label="Map Restriction">
-            <Input placeholder="VD: map1,map2 hoặc để trống" />
-          </Form.Item>
-          <Form.Item name="extra_data" label="Extra Data">
-            <Input.TextArea rows={3} placeholder="JSON hoặc text" />
-          </Form.Item>
-          <Form.Item name="is_active" label="Active" valuePropName="checked">
-            <Switch />
-          </Form.Item>
-        </Form>
-      </Drawer>
+      {drawerOpen && (
+        <Card
+          type="inner"
+          title={isEdit ? `Chỉnh sửa Requirement #${currentRecord?.id}` : `Thêm Requirement cho Task #${taskMainId}`}
+          style={{ marginTop: 16 }}
+          extra={
+            <Space>
+              <Button onClick={() => setDrawerOpen(false)}>Hủy</Button>
+              <Button type="primary" onClick={handleSubmit}>{isEdit ? 'Lưu' : 'Tạo mới'}</Button>
+            </Space>
+          }
+        >
+          <Form form={form} layout="vertical" initialValues={{ task_main_id: taskMainId, task_sub_id: 0, target_count: 1, is_active: true }}>
+            <Form.Item name="task_main_id" label="Task Main ID" rules={[{ required: true }]}>
+              <InputNumber min={1} style={{ width: '100%' }} disabled />
+            </Form.Item>
+            <Form.Item name="task_sub_id" label="Task Sub ID" rules={[{ required: true, message: 'Nhập task_sub_id' }]}>
+              <InputNumber min={0} style={{ width: '100%' }} />
+            </Form.Item>
+            <Form.Item name="requirement_type" label="Requirement Type" rules={[{ required: true, message: 'Nhập requirement type' }]}>
+              <Select
+                placeholder="Chọn loại requirement"
+                options={[
+                  { label: 'KILL_MOB', value: 'KILL_MOB' },
+                  { label: 'KILL_BOSS', value: 'KILL_BOSS' },
+                  { label: 'TALK_NPC', value: 'TALK_NPC' },
+                  { label: 'PICK_ITEM', value: 'PICK_ITEM' },
+                  { label: 'GO_TO_MAP', value: 'GO_TO_MAP' },
+                  { label: 'USE_ITEM', value: 'USE_ITEM' },
+                ]}
+                showSearch
+                allowClear
+              />
+            </Form.Item>
+            <Form.Item name="target_id" label="Target ID" rules={[{ required: true, message: 'Nhập target_id' }]}>
+              {targetOptions.length > 0 ? (
+                <Select
+                  placeholder={templatesLoading ? 'Đang tải...' : 'Chọn Target theo loại'}
+                  loading={templatesLoading}
+                  showSearch
+                  allowClear
+                  optionFilterProp="label"
+                  options={targetOptions}
+                  filterOption={(input, option) =>
+                    (option?.label as string)?.toLowerCase().includes(input.toLowerCase())
+                  }
+                />
+              ) : (
+                <InputNumber style={{ width: '100%' }} />
+              )}
+            </Form.Item>
+            <Form.Item name="target_count" label="Target Count">
+              <InputNumber min={1} style={{ width: '100%' }} />
+            </Form.Item>
+            <Form.Item name="map_restriction" label="Map Restriction">
+              <Input placeholder="VD: map1,map2 hoặc để trống" />
+            </Form.Item>
+            <Form.Item name="extra_data" label="Extra Data">
+              <Input.TextArea rows={3} placeholder="JSON hoặc text" />
+            </Form.Item>
+            <Form.Item name="is_active" label="Active" valuePropName="checked">
+              <Switch />
+            </Form.Item>
+          </Form>
+        </Card>
+      )}
     </Card>
   );
 }
