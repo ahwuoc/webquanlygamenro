@@ -25,7 +25,7 @@ export default async function MapDetailPage({ params }: MapDetailPageProps) {
         notFound();
     }
 
-    const getPlanetName = (planetId: number) => {
+    const _getPlanetName = (planetId: number) => {
         switch (planetId) {
             case 0: return 'Trái Đất';
             case 1: return 'Namek';
@@ -34,7 +34,7 @@ export default async function MapDetailPage({ params }: MapDetailPageProps) {
         }
     };
 
-    const getPlanetColor = (planetId: number) => {
+    const _getPlanetColor = (planetId: number) => {
         switch (planetId) {
             case 0: return 'blue';
             case 1: return 'green';
@@ -43,7 +43,7 @@ export default async function MapDetailPage({ params }: MapDetailPageProps) {
         }
     };
 
-    const getMapTypeName = (type: number) => {
+    const _getMapTypeName = (type: number) => {
         switch (type) {
             case 0: return 'Thường';
             case 1: return 'PvP';
@@ -53,7 +53,7 @@ export default async function MapDetailPage({ params }: MapDetailPageProps) {
         }
     };
 
-    const getMapTypeColor = (type: number) => {
+    const _getMapTypeColor = (type: number) => {
         switch (type) {
             case 0: return 'default';
             case 1: return 'red';
@@ -63,7 +63,7 @@ export default async function MapDetailPage({ params }: MapDetailPageProps) {
         }
     };
 
-    const getBgTypeName = (bgType: number) => {
+    const _getBgTypeName = (bgType: number) => {
         switch (bgType) {
             case 0: return 'Ngày';
             case 1: return 'Đêm';

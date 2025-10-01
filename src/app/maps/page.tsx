@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import Link from "next/link";
-import { Card, Button } from "antd";
+import { Card } from "antd";
 import MapTable from "@/components/MapTable";
 
 export default async function MapsDashboard() {
