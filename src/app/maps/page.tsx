@@ -18,9 +18,8 @@ export default async function MapsDashboard() {
         },
     });
 
-    // Lấy danh sách map gần đây (theo ID để có thứ tự)
-    const recentMaps = await prisma.map_template.findMany({
-        take: 5,
+    // Lấy toàn bộ danh sách map (theo ID để có thứ tự)
+    const maps = await prisma.map_template.findMany({
         orderBy: {
             id: 'desc',
         },
@@ -142,12 +141,12 @@ export default async function MapsDashboard() {
                     </Card>
                 </div>
 
-                {/* Recent Maps */}
+                {/* Danh sách Map */}
                 <Card
-                    title="Map Gần Đây"
-                    extra="Danh sách 5 map được tạo gần đây nhất"
+                    title="Danh Sách Map"
+                    extra={`Tổng: ${mapStats._count.id} map`}
                 >
-                    <MapTable dataSource={recentMaps} />
+                    <MapTable dataSource={maps} pagination />
                 </Card>
 
                 {/* Quick Actions removed: list page deprecated */}

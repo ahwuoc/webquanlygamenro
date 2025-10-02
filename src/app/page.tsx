@@ -182,6 +182,20 @@ export default async function Home() {
                 <p className="text-gray-600">Quản lý hệ thống map trong game</p>
               </Link>
 
+              {/* Item Template Management */}
+              <Link
+                href="/items"
+                className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow text-center"
+              >
+                <div className="p-3 rounded-full bg-sky-100 mx-auto w-fit mb-4">
+                  <svg className="w-8 h-8 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h4l2 2h6a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V6z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Item Template Management</h3>
+                <p className="text-gray-600">Quản lý item_template hệ thống</p>
+              </Link>
+
               {/* Admin Command Panel */}
               <Link
                 href="/admin"

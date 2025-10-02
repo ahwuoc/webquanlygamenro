@@ -74,3 +74,59 @@ export async function GET(request: NextRequest) {
         );
     }
 }
+
+// Create new item_template
+export async function POST(request: NextRequest) {
+    try {
+        const body = await request.json();
+        const {
+            id,
+            NAME,
+            TYPE,
+            part,
+            gender,
+            description,
+            icon_id = 0,
+            power_require = 0,
+            gold = 0,
+            gem = 0,
+            head = -1,
+            body: bodyPart = -1,
+            leg = -1,
+            ruby = 0,
+            is_up_to_up = false,
+        } = body || {};
+
+        if (!Number.isFinite(id) || !NAME || !Number.isFinite(TYPE) || !Number.isFinite(part) || !Number.isFinite(gender)) {
+            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+        }
+
+        const created = await prisma.item_template.create({
+            data: {
+                id: Number(id),
+                NAME: String(NAME),
+                TYPE: Number(TYPE),
+                part: Number(part),
+                gender: Number(gender),
+                description: String(description ?? ''),
+                icon_id: Number(icon_id),
+                power_require: Number(power_require),
+                gold: Number(gold),
+                gem: Number(gem),
+                head: Number(head),
+                body: Number(bodyPart),
+                leg: Number(leg),
+                ruby: Number(ruby),
+                is_up_to_up: Boolean(is_up_to_up),
+            },
+        });
+
+        // Invalidate cache
+        ITEM_CACHE = null;
+
+        return NextResponse.json({ item: created }, { status: 201 });
+    } catch (error) {
+        console.error('Error creating item:', error);
+        return NextResponse.json({ error: 'Failed to create item' }, { status: 500 });
+    }
+}
