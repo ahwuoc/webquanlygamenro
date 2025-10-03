@@ -17,9 +17,13 @@ interface ItemTableProps {
   loading?: boolean;
   pagination?: false | { current: number; pageSize: number; total: number; onChange: (page: number, pageSize: number) => void };
   onEdit?: (row: ItemRow) => void;
+  rowSelection?: {
+    selectedRowKeys: React.Key[];
+    onChange: (selectedRowKeys: React.Key[], selectedRows: ItemRow[]) => void;
+  };
 }
 
-export default function ItemTable({ dataSource, loading = false, pagination = false, onEdit }: ItemTableProps) {
+export default function ItemTable({ dataSource, loading = false, pagination = false, onEdit, rowSelection }: ItemTableProps) {
   const columns = [
     {
       title: 'ID',
@@ -92,6 +96,7 @@ export default function ItemTable({ dataSource, loading = false, pagination = fa
       loading={loading}
       pagination={pagination || false}
       size="small"
+      rowSelection={rowSelection}
     />
   );
 }

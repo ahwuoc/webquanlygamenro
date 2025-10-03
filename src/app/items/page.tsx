@@ -30,6 +30,13 @@ export default function ItemsManagementPage() {
   const [form] = Form.useForm();
   const [editId, setEditId] = useState<number | null>(null);
 
+  // bulk edit state
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [selectedRows, setSelectedRows] = useState<ItemRow[]>([]);
+  const [bulkEditOpen, setBulkEditOpen] = useState(false);
+  const [bulkForm] = Form.useForm();
+  const [bulkSubmitting, setBulkSubmitting] = useState(false);
+
   const fetchData = useCallback(async (opts?: { page?: number; pageSize?: number; search?: string; type?: number; refresh?: boolean }) => {
     const p = opts?.page ?? page;
     const l = opts?.pageSize ?? pageSize;
@@ -117,6 +124,94 @@ export default function ItemsManagementPage() {
     }
   };
 
+  const openBulkEdit = () => {
+    if (selectedRowKeys.length === 0) {
+      message.warning('Vui lòng chọn ít nhất một item để sửa');
+      return;
+    }
+    bulkForm.resetFields();
+    setBulkEditOpen(true);
+  };
+
+  const handleBulkEdit = async () => {
+    try {
+      const values = await bulkForm.validateFields();
+      setBulkSubmitting(true);
+      
+      // Only send fields that have values
+      const updates: any = {};
+      Object.keys(values).forEach(key => {
+        if (values[key] !== undefined && values[key] !== null && values[key] !== '') {
+          updates[key] = values[key];
+        }
+      });
+
+      if (Object.keys(updates).length === 0) {
+        message.warning('Vui lòng nhập ít nhất một trường để cập nhật');
+        return;
+      }
+
+      const res = await fetch('/api/items/bulk', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ids: selectedRowKeys,
+          updates
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        message.success(`Đã cập nhật ${data.updatedCount} item thành công`);
+        setBulkEditOpen(false);
+        setSelectedRowKeys([]);
+        setSelectedRows([]);
+        fetchData({ page });
+      } else {
+        message.error('Cập nhật hàng loạt thất bại');
+      }
+    } catch (e) {
+      console.error(e);
+      message.error('Có lỗi xảy ra khi cập nhật');
+    } finally {
+      setBulkSubmitting(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedRowKeys.length === 0) {
+      message.warning('Vui lòng chọn ít nhất một item để xóa');
+      return;
+    }
+
+    Modal.confirm({
+      title: 'Xác nhận xóa',
+      content: `Bạn có chắc chắn muốn xóa ${selectedRowKeys.length} item đã chọn?`,
+      onOk: async () => {
+        try {
+          const res = await fetch('/api/items/bulk', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids: selectedRowKeys })
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            message.success(`Đã xóa ${data.deletedCount} item thành công`);
+            setSelectedRowKeys([]);
+            setSelectedRows([]);
+            fetchData({ page });
+          } else {
+            message.error('Xóa hàng loạt thất bại');
+          }
+        } catch (e) {
+          console.error(e);
+          message.error('Có lỗi xảy ra khi xóa');
+        }
+      }
+    });
+  };
+
   const submitForm = async () => {
     try {
       const values = await form.validateFields();
@@ -175,11 +270,33 @@ export default function ItemsManagementPage() {
           </Space>
         </Card>
 
-        <Card title={`Danh Sách Item`} extra={<Space><span className="text-gray-600">Tổng: {total}</span><Button type="primary" onClick={openCreate}>Thêm Item</Button></Space>}>
+        <Card 
+          title={`Danh Sách Item`} 
+          extra={
+            <Space>
+              <span className="text-gray-600">Tổng: {total}</span>
+              {selectedRowKeys.length > 0 && (
+                <>
+                  <span className="text-blue-600">Đã chọn: {selectedRowKeys.length}</span>
+                  <Button onClick={openBulkEdit}>Sửa hàng loạt</Button>
+                  <Button danger onClick={handleBulkDelete}>Xóa hàng loạt</Button>
+                </>
+              )}
+              <Button type="primary" onClick={openCreate}>Thêm Item</Button>
+            </Space>
+          }
+        >
           <ItemTable
             dataSource={items}
             loading={loading}
             onEdit={openEdit}
+            rowSelection={{
+              selectedRowKeys,
+              onChange: (keys, rows) => {
+                setSelectedRowKeys(keys);
+                setSelectedRows(rows);
+              }
+            }}
             pagination={{
               current: page,
               pageSize,
@@ -257,6 +374,73 @@ export default function ItemsManagementPage() {
               </Form.Item>
               <Form.Item label="Leg" name="leg" style={{ flex: 1 }}>
                 <InputNumber style={{ width: '100%' }} />
+              </Form.Item>
+            </Space>
+          </Form>
+        </Modal>
+
+        <Modal
+          title={`Sửa hàng loạt (${selectedRowKeys.length} item được chọn)`}
+          open={bulkEditOpen}
+          onCancel={() => setBulkEditOpen(false)}
+          onOk={handleBulkEdit}
+          confirmLoading={bulkSubmitting}
+          width={720}
+        >
+          <div className="mb-4 p-3 bg-blue-50 rounded">
+            <Typography.Text type="secondary">
+              Chỉ các trường được điền sẽ được cập nhật. Để trống các trường không muốn thay đổi.
+            </Typography.Text>
+          </div>
+          <Form
+            layout="vertical"
+            form={bulkForm}
+          >
+            <Space size="middle" style={{ display: 'flex' }} wrap>
+              <Form.Item label="TYPE" name="TYPE" style={{ flex: 1 }}>
+                <InputNumber style={{ width: '100%' }} placeholder="Không thay đổi" />
+              </Form.Item>
+              <Form.Item label="Part" name="part" style={{ flex: 1 }}>
+                <InputNumber style={{ width: '100%' }} placeholder="Không thay đổi" />
+              </Form.Item>
+              <Form.Item label="Gender" name="gender" style={{ flex: 1 }}>
+                <InputNumber style={{ width: '100%' }} placeholder="Không thay đổi" />
+              </Form.Item>
+            </Space>
+            <Form.Item label="Mô tả (description)" name="description">
+              <Input.TextArea rows={3} placeholder="Không thay đổi" />
+            </Form.Item>
+            <Space size="middle" style={{ display: 'flex' }} wrap>
+              <Form.Item label="Icon ID" name="icon_id" style={{ flex: 1 }}>
+                <InputNumber style={{ width: '100%' }} placeholder="Không thay đổi" />
+              </Form.Item>
+              <Form.Item label="Power Require" name="power_require" style={{ flex: 1 }}>
+                <InputNumber style={{ width: '100%' }} placeholder="Không thay đổi" />
+              </Form.Item>
+              <Form.Item label="Ruby" name="ruby" style={{ flex: 1 }}>
+                <InputNumber style={{ width: '100%' }} placeholder="Không thay đổi" />
+              </Form.Item>
+            </Space>
+            <Space size="middle" style={{ display: 'flex' }} wrap>
+              <Form.Item label="Gold" name="gold" style={{ flex: 1 }}>
+                <InputNumber style={{ width: '100%' }} placeholder="Không thay đổi" />
+              </Form.Item>
+              <Form.Item label="Gem" name="gem" style={{ flex: 1 }}>
+                <InputNumber style={{ width: '100%' }} placeholder="Không thay đổi" />
+              </Form.Item>
+              <Form.Item label="is_up_to_up" name="is_up_to_up" valuePropName="checked" style={{ flex: 1 }}>
+                <Switch />
+              </Form.Item>
+            </Space>
+            <Space size="middle" style={{ display: 'flex' }} wrap>
+              <Form.Item label="Head" name="head" style={{ flex: 1 }}>
+                <InputNumber style={{ width: '100%' }} placeholder="Không thay đổi" />
+              </Form.Item>
+              <Form.Item label="Body" name="body" style={{ flex: 1 }}>
+                <InputNumber style={{ width: '100%' }} placeholder="Không thay đổi" />
+              </Form.Item>
+              <Form.Item label="Leg" name="leg" style={{ flex: 1 }}>
+                <InputNumber style={{ width: '100%' }} placeholder="Không thay đổi" />
               </Form.Item>
             </Space>
           </Form>
