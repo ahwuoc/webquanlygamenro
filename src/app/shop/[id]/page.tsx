@@ -57,6 +57,17 @@ export default function ShopDetailPage() {
   const [editIsSell, setEditIsSell] = useState(true);
   const [editForm] = Form.useForm();
 
+  // Bulk edit state
+  const [selectedItems, setSelectedItems] = useState<number[]>([]);
+  const [bulkEditOpen, setBulkEditOpen] = useState(false);
+  const [bulkTempId, setBulkTempId] = useState('');
+  const [bulkTypeSell, setBulkTypeSell] = useState('');
+  const [bulkCost, setBulkCost] = useState('');
+  const [bulkIconSpec, setBulkIconSpec] = useState<number>(0);
+  const [bulkIsNew, setBulkIsNew] = useState<boolean | null>(null);
+  const [bulkIsSell, setBulkIsSell] = useState<boolean | null>(null);
+  const [bulkForm] = Form.useForm();
+
   // Create Tab
   const [newTabName, setNewTabName] = useState('');
   const onCreateTabFinish = async () => {
@@ -193,7 +204,7 @@ export default function ShopDetailPage() {
     setEditTempId(String(it.temp_id));
     setEditTypeSell(it.type_sell ? String(it.type_sell) : '');
     setEditCost(it.cost ? String(it.cost) : '');
-    setEditIconSpec(it.icon_spec || 0);
+    setEditIconSpec(it.icon_spec || it.template?.icon_id || 0);
     setEditIsNew(!!it.is_new);
     setEditIsSell(!!it.is_sell);
     setEditOpen(true);
@@ -224,6 +235,112 @@ export default function ShopDetailPage() {
     } catch {
       message.error('Có lỗi xảy ra khi cập nhật item');
     }
+  };
+
+  // Bulk operations
+  const handleSelectItem = (itemId: number, checked: boolean) => {
+    if (checked) {
+      setSelectedItems(prev => [...prev, itemId]);
+    } else {
+      setSelectedItems(prev => prev.filter(id => id !== itemId));
+    }
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const allIds = (itemData?.items || []).map((item: any) => item.id);
+      setSelectedItems(allIds);
+    } else {
+      setSelectedItems([]);
+    }
+  };
+
+  const openBulkEdit = () => {
+    if (selectedItems.length === 0) {
+      message.warning('Vui lòng chọn ít nhất một item để sửa hàng loạt');
+      return;
+    }
+    setBulkEditOpen(true);
+  };
+
+  const saveBulkEdit = async () => {
+    if (selectedItems.length === 0) return;
+    
+    try {
+      const updates: any = {};
+      
+      if (bulkTempId) updates.temp_id = bulkTempId;
+      if (bulkTypeSell) updates.type_sell = bulkTypeSell;
+      if (bulkCost !== '') updates.cost = bulkCost;
+      if (bulkIconSpec) updates.icon_spec = bulkIconSpec;
+      if (bulkIsNew !== null) updates.is_new = bulkIsNew;
+      if (bulkIsSell !== null) updates.is_sell = bulkIsSell;
+
+      const res = await fetch('/api/shop-items/bulk', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          item_ids: selectedItems,
+          updates
+        }),
+      });
+
+      if (res.ok) {
+        const result = await res.json();
+        message.success(`Cập nhật thành công ${result.updated_count} items!`);
+        setBulkEditOpen(false);
+        setSelectedItems([]);
+        // Reset form
+        setBulkTempId('');
+        setBulkTypeSell('');
+        setBulkCost('');
+        setBulkIconSpec(0);
+        setBulkIsNew(null);
+        setBulkIsSell(null);
+        await mutateItems();
+      } else {
+        const error = await res.json();
+        message.error(error.error || 'Có lỗi xảy ra khi cập nhật hàng loạt');
+      }
+    } catch {
+      message.error('Có lỗi xảy ra khi cập nhật hàng loạt');
+    }
+  };
+
+  const bulkDelete = async () => {
+    if (selectedItems.length === 0) {
+      message.warning('Vui lòng chọn ít nhất một item để xóa');
+      return;
+    }
+
+    Modal.confirm({
+      title: 'Xác nhận xóa hàng loạt',
+      content: `Bạn có chắc chắn muốn xóa ${selectedItems.length} items đã chọn?`,
+      okText: 'Xóa',
+      cancelText: 'Hủy',
+      okType: 'danger',
+      onOk: async () => {
+        try {
+          const res = await fetch('/api/shop-items/bulk', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ item_ids: selectedItems }),
+          });
+
+          if (res.ok) {
+            const result = await res.json();
+            message.success(`Xóa thành công ${result.deleted_count} items!`);
+            setSelectedItems([]);
+            await mutateItems();
+          } else {
+            const error = await res.json();
+            message.error(error.error || 'Có lỗi xảy ra khi xóa hàng loạt');
+          }
+        } catch {
+          message.error('Có lỗi xảy ra khi xóa hàng loạt');
+        }
+      }
+    });
   };
 
   return (
@@ -269,9 +386,21 @@ export default function ShopDetailPage() {
                   <span className="ml-3 text-xs text-muted-foreground">Cache cập nhật: {itemsCacheRefreshedAt}</span>
                 )}
               </div>
-              <Button type="default" size="small" onClick={refreshItemsCache} disabled={isRefreshingItems}>
-                {isRefreshingItems ? 'Đang tải...' : 'Làm mới cache items'}
-              </Button>
+              <div className="flex gap-2">
+                {selectedItems.length > 0 && (
+                  <>
+                    <Button type="primary" size="small" onClick={openBulkEdit}>
+                      Sửa hàng loạt ({selectedItems.length})
+                    </Button>
+                    <Button danger size="small" onClick={bulkDelete}>
+                      Xóa hàng loạt ({selectedItems.length})
+                    </Button>
+                  </>
+                )}
+                <Button type="default" size="small" onClick={refreshItemsCache} disabled={isRefreshingItems}>
+                  {isRefreshingItems ? 'Đang tải...' : 'Làm mới cache items'}
+                </Button>
+              </div>
             </div>
 
             <Form layout="vertical" className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end mb-6" onFinish={onAddItemFinish}>
@@ -314,6 +443,13 @@ export default function ShopDetailPage() {
                 <table className="w-full caption-bottom text-sm">
                   <thead className="[&_tr]:border-b">
                     <tr className="border-b">
+                      <th className="h-10 px-2 text-left align-middle font-medium">
+                        <Checkbox 
+                          checked={selectedItems.length === (itemData?.items || []).length && (itemData?.items || []).length > 0}
+                          indeterminate={selectedItems.length > 0 && selectedItems.length < (itemData?.items || []).length}
+                          onChange={(e) => handleSelectAll(e.target.checked)}
+                        />
+                      </th>
                       <th className="h-10 px-2 text-left align-middle font-medium">ID</th>
                       <th className="h-10 px-2 text-left align-middle font-medium">Temp</th>
                       <th className="h-10 px-2 text-left align-middle font-medium">Tên</th>
@@ -329,6 +465,12 @@ export default function ShopDetailPage() {
                   <tbody>
                     {(itemData?.items || []).map((it: any) => (
                       <tr key={it.id} className="hover:bg-muted/50 border-b transition-colors">
+                        <td className="p-2 align-middle">
+                          <Checkbox 
+                            checked={selectedItems.includes(it.id)}
+                            onChange={(e) => handleSelectItem(it.id, e.target.checked)}
+                          />
+                        </td>
                         <td className="p-2 align-middle">{it.id}</td>
                         <td className="p-2 align-middle">#{it.temp_id}</td>
                         <td className="p-2 align-middle">{it.template?.NAME || '-'}</td>
@@ -336,7 +478,7 @@ export default function ShopDetailPage() {
                         <td className="p-2 align-middle">{it.template?.part ?? '-'}</td>
                         <td className="p-2 align-middle">{(typeSellList || []).find((t: any) => t.id === it.type_sell)?.NAME || (it.type_sell ?? '-')}</td>
                         <td className="p-2 align-middle">{it.cost ?? 0}</td>
-                        <td className="p-2 align-middle">{it.template?.icon_id ?? it.icon_spec ?? '-'}</td>
+                        <td className="p-2 align-middle">{it.icon_spec ?? it.template?.icon_id ?? '-'}</td>
                         <td className="p-2 align-middle">{[it.is_new ? 'NEW' : null, it.is_sell ? 'SELL' : null].filter(Boolean).join(', ')}</td>
                         <td className="p-2 align-middle">
                           <div className="flex gap-2">
@@ -451,7 +593,14 @@ export default function ShopDetailPage() {
                   placeholder="Tìm tên hoặc ID..."
                   items={allItems?.items || []}
                   value={editTempId}
-                  onChange={setEditTempId}
+                  onChange={(newTempId) => {
+                    setEditTempId(newTempId);
+                    // Auto-update icon_spec when template changes
+                    const selectedTemplate = (allItems?.items || []).find((item: any) => item.id === Number(newTempId));
+                    if (selectedTemplate?.icon_id) {
+                      setEditIconSpec(selectedTemplate.icon_id);
+                    }
+                  }}
                   disabled={loadingAllItems || isRefreshingItems}
                 />
               </Form.Item>
@@ -493,6 +642,112 @@ export default function ShopDetailPage() {
                 <Checkbox checked={editIsSell} onChange={(e) => setEditIsSell(e.target.checked)}>
                   Sell
                 </Checkbox>
+              </Form.Item>
+            </div>
+          </Form>
+        </Modal>
+
+        {/* Bulk Edit Modal */}
+        <Modal
+          title={`Sửa hàng loạt ${selectedItems.length} items`}
+          open={bulkEditOpen}
+          onCancel={() => setBulkEditOpen(false)}
+          onOk={saveBulkEdit}
+          okText="Cập nhật hàng loạt"
+          cancelText="Hủy"
+          width={800}
+        >
+          <Form
+            form={bulkForm}
+            layout="vertical"
+          >
+            <div className="mb-4 p-3 bg-blue-50 rounded">
+              <p className="text-sm text-blue-700 mb-2">
+                <strong>Lưu ý:</strong> Chỉ các trường có giá trị sẽ được cập nhật. Để trống nếu không muốn thay đổi trường đó.
+              </p>
+              <p className="text-xs text-blue-600">
+                Đang chọn {selectedItems.length} items để cập nhật hàng loạt.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Form.Item label="Item bán (item_template)">
+                <ItemCombobox
+                  placeholder="Chọn để thay đổi template cho tất cả..."
+                  items={allItems?.items || []}
+                  value={bulkTempId}
+                  onChange={(newTempId) => {
+                    setBulkTempId(newTempId);
+                    // Auto-update icon_spec when template changes
+                    const selectedTemplate = (allItems?.items || []).find((item: any) => item.id === Number(newTempId));
+                    if (selectedTemplate?.icon_id) {
+                      setBulkIconSpec(selectedTemplate.icon_id);
+                    }
+                  }}
+                  disabled={loadingAllItems || isRefreshingItems}
+                />
+              </Form.Item>
+
+              <Form.Item label="Type Sell">
+                <Select
+                  value={bulkTypeSell || undefined}
+                  onChange={(v) => setBulkTypeSell(String(v))}
+                  placeholder="Chọn để thay đổi type sell..."
+                  allowClear
+                  options={(typeSellList || []).map((t: any) => ({ label: `${t.NAME} (#${t.id})`, value: String(t.id) }))}
+                />
+              </Form.Item>
+
+              <Form.Item label="Cost">
+                <Input
+                  value={bulkCost}
+                  onChange={(e) => setBulkCost(e.target.value)}
+                  placeholder="Nhập để thay đổi cost..."
+                  type="number"
+                />
+              </Form.Item>
+
+              <Form.Item label="Icon Spec">
+                <IconSelector
+                  value={bulkIconSpec}
+                  onChange={setBulkIconSpec}
+                  placeholder="Chọn để thay đổi icon spec..."
+                  showPreview={true}
+                  items={allItems?.items || []}
+                />
+              </Form.Item>
+
+              <Form.Item label="Flags">
+                <Space direction="vertical">
+                  <div>
+                    <span className="mr-2">New:</span>
+                    <Select
+                      value={bulkIsNew}
+                      onChange={setBulkIsNew}
+                      placeholder="Chọn trạng thái New..."
+                      allowClear
+                      style={{ width: 120 }}
+                      options={[
+                        { label: 'True', value: true },
+                        { label: 'False', value: false }
+                      ]}
+                    />
+                  </div>
+                  <div>
+                    <span className="mr-2">Sell:</span>
+                    <Select
+                      value={bulkIsSell}
+                      onChange={setBulkIsSell}
+                      placeholder="Chọn trạng thái Sell..."
+                      allowClear
+                      style={{ width: 120 }}
+                      options={[
+                        { label: 'True', value: true },
+                        { label: 'False', value: false }
+                      ]}
+                    />
+                  </div>
+                </Space>
               </Form.Item>
             </div>
           </Form>

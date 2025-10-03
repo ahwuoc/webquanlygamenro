@@ -37,8 +37,11 @@ export default function IconSelector({
 
     useEffect(() => {
         if (value && items.length > 0) {
+            // Find item by icon_id that matches the value (icon_spec)
             const item = items.find(i => i.icon_id === value);
             setSelectedItem(item || null);
+        } else if (value === 0 || !value) {
+            setSelectedItem(null);
         }
     }, [value, items]);
 
@@ -79,7 +82,7 @@ export default function IconSelector({
                     onSearch={setSearchTerm}
                     style={{ width: '100%' }}
                     options={filteredItems.slice(0, 100).map(item => ({
-                        label: `${item.NAME} (#${item.id}) - Icon: ${item.icon_id}`,
+                        label: `${item.NAME || 'Unknown'} (#${item.id}) - Icon: ${item.icon_id || 'N/A'}`,
                         value: item.id,
                         key: item.id
                     }))}
@@ -124,7 +127,7 @@ export default function IconSelector({
                             </Typography.Text>
                             <br />
                             <Typography.Text type="secondary" className="text-xs">
-                                Icon ID: {selectedItem.icon_id}
+                                Icon ID: {selectedItem.icon_id || 'N/A'}
                             </Typography.Text>
                         </Col>
                     </Row>

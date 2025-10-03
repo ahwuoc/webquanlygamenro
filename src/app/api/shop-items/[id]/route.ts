@@ -39,6 +39,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     if (typeof icon_spec === 'number') {
       iconSpecUpdate = icon_spec;
     } else if (typeof temp_id === 'number') {
+      // When temp_id changes, update icon_spec to match the new template's icon_id
       const tpl = await prisma.item_template.findUnique({ where: { id: temp_id } });
       if (!tpl) return NextResponse.json({ error: 'item_template not found' }, { status: 404 });
       iconSpecUpdate = tpl.icon_id;

@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-// Simple in-memory cache (per server process). Suited for rarely-changing reference data.
-type ItemRow = { id: number; NAME: string; TYPE: number; part: number; gender: number; description: string };
+type ItemRow = { id: number; NAME: string; TYPE: number; part: number; gender: number; description: string; icon_id: number };
 type TypeRow = { id: number; NAME: string };
 let ITEM_CACHE: { items: ItemRow[]; types: TypeRow[]; loadedAt: number } | null = null;
 
@@ -31,6 +30,7 @@ export async function GET(request: NextRequest) {
                         part: true,
                         gender: true,
                         description: true,
+                        icon_id: true,
                     },
                 }),
                 prisma.type_item.findMany({
