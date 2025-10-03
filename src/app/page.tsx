@@ -196,6 +196,20 @@ export default async function Home() {
                 <p className="text-gray-600">Quản lý item_template hệ thống</p>
               </Link>
 
+              {/* Item Option Template Management */}
+              <Link
+                href="/item-options"
+                className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow text-center"
+              >
+                <div className="p-3 rounded-full bg-cyan-100 mx-auto w-fit mb-4">
+                  <svg className="w-8 h-8 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Item Option Templates</h3>
+                <p className="text-gray-600">Quản lý item_option_template hệ thống</p>
+              </Link>
+
               {/* Admin Command Panel */}
               <Link
                 href="/admin"

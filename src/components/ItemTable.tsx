@@ -1,7 +1,6 @@
 'use client';
 
 import { Table, Tag, Tooltip, Button } from 'antd';
-import Link from 'next/link';
 import { getGenderName } from '@/lib/utils';
 
 export interface ItemRow {
