@@ -111,7 +111,7 @@ export default function MobRewardAdvancedForm({ value, onSubmit, submitting }: P
   const { fields: itemFields, append: appendItem, remove: removeItem } = useFieldArray({ control, name: "items" });
 
   const [mobsList, setMobsList] = useState<{ id: number; NAME: string }[]>([]);
-  const [itemsList, setItemsList] = useState<{ id: number; NAME: string }[]>([]);
+  const [itemsList, setItemsList] = useState<{ id: number; NAME: string; TYPE?: number; icon_id?: number }[]>([]);
   const [optionTemplates, setOptionTemplates] = useState<{ id: number; NAME: string }[]>([]);
   const [loadingMeta, setLoadingMeta] = useState(true);
 
@@ -149,8 +149,13 @@ export default function MobRewardAdvancedForm({ value, onSubmit, submitting }: P
   }, []);
 
   const mobOptions = useMemo(() => mobsList.map(m => ({ label: `${m.NAME} (#${m.id})`, value: String(m.id) })), [mobsList]);
-  const itemOptions = useMemo(() => itemsList.map(it => ({ label: `${it.NAME} (#${it.id})`, value: String(it.id) })), [itemsList]);
+  const itemOptions = useMemo(() => itemsList.map(it => ({ label: `${it.NAME} (#${it.id})${it.TYPE != null ? ` • Type ${it.TYPE}` : ''}`, value: String(it.id) })), [itemsList]);
   const optionOptions = useMemo(() => optionTemplates.map(op => ({ label: `${op.NAME} (#${op.id})`, value: String(op.id) })), [optionTemplates]);
+  const itemNameById = useMemo(() => {
+    const m = new Map<number, string>();
+    for (const it of itemsList) m.set(it.id, it.NAME);
+    return m;
+  }, [itemsList]);
 
   return (
     <Card>
@@ -254,12 +259,42 @@ export default function MobRewardAdvancedForm({ value, onSubmit, submitting }: P
           </div>
         </div>
 
+        {/* Quick summary */}
+        <Card className="bg-blue-50 border-blue-100" size="small" style={{ marginBottom: 12 }}>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+            <div><b>Số item:</b> {itemFields.length}</div>
+            <div>
+              <b>Tổng tỷ lệ (sum):</b> {(() => {
+                try {
+                  const items = (watch('items') as any[]) || [];
+                  const sum = items.reduce((s, it) => s + Number(it?.drop_rate || 0), 0);
+                  return `${sum.toFixed(1)}%`;
+                } catch {
+                  return '0%';
+                }
+              })()}
+            </div>
+            <div className="text-gray-600">Gợi ý: Có thể thêm nhiều item, mỗi item có nhiều Option.</div>
+          </div>
+        </Card>
+
         <Card title="Danh sách Item drop" className="border-dashed">
           <div className="space-y-4">
             {itemFields.map((itemField, idx) => {
               const itemName = `items.${idx}` as const;
+              const currentItemId = (watch(`${itemName}.item_id`) as any) as number | undefined;
+              const currentName = currentItemId ? (itemNameById.get(Number(currentItemId)) || `#${currentItemId}`) : undefined;
+              const optionsArr = ((watch(`${itemName}.options`) as any[]) || []);
               return (
-                <Card key={itemField.id} type="inner" title={`Item #${idx + 1}`} extra={
+                <Card key={itemField.id} type="inner" title={
+                  <div className="flex items-center gap-2">
+                    <span>Item #{idx + 1}</span>
+                    {currentName && (
+                      <span className="text-gray-600">• {currentName}{currentItemId ? ` (ID: ${currentItemId})` : ''}</span>
+                    )}
+                    <span className="text-gray-500">• {optionsArr.length} option</span>
+                  </div>
+                } extra={
                   <Space>
                     <Popconfirm title="Xóa item này?" onConfirm={() => removeItem(idx)}>
                       <Button danger>Xóa</Button>

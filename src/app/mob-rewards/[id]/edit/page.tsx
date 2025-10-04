@@ -85,8 +85,8 @@ export default function EditMobRewardPage({ params }: PageProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-3xl mx-auto">Đang tải...</div>
+      <div className="min-h-screen bg-gray-50 py-6 px-4 sm:px-8 lg:px-12">
+        <div className="max-w-none">Đang tải...</div>
       </div>
     );
   }
@@ -94,8 +94,8 @@ export default function EditMobRewardPage({ params }: PageProps) {
   if (!data) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gray-50 py-6 px-4 sm:px-8 lg:px-12">
+      <div className="max-w-none space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">Sửa Mob Reward #{id}</h1>
