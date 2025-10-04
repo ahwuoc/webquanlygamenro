@@ -7,6 +7,7 @@ import { Button, Card, Select, Table, Tag } from 'antd';
 interface MobRewardRow {
   id: number;
   mob_id: number;
+  // Back-compat flattened fields from API (first item)
   item_id: number;
   quantity_min: number;
   quantity_max: number;
@@ -18,6 +19,15 @@ interface MobRewardRow {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  // New: full items in group
+  items?: {
+    id: number;
+    item_id: number;
+    quantity_min: number;
+    quantity_max: number;
+    drop_rate: number;
+    options?: { id: number; option_id: number; param: number }[];
+  }[];
 }
 
 export default function MobRewardsListPage() {
@@ -128,20 +138,42 @@ export default function MobRewardsListPage() {
       },
     },
     {
-      title: 'Item',
-      key: 'item',
+      title: 'Items',
+      key: 'items',
       render: (_: any, r: MobRewardRow) => {
-        const name = itemNameById.get(r.item_id) || `#${r.item_id}`;
+        const items = Array.isArray(r.items) && r.items.length > 0
+          ? r.items
+          : [
+              {
+                id: -1,
+                item_id: r.item_id,
+                quantity_min: r.quantity_min,
+                quantity_max: r.quantity_max,
+                drop_rate: r.drop_rate,
+                options: r.option_id || r.option_level ? [{ id: -1, option_id: r.option_id, param: r.option_level }] : [],
+              },
+            ];
         return (
-          <div className="flex flex-col">
-            <span>{name}</span>
-            <span className="text-xs text-gray-500">ID: {r.item_id}</span>
+          <div className="space-y-1">
+            {items.map((it, idx) => {
+              const name = itemNameById.get(it.item_id) || `#${it.item_id}`;
+              const optCount = (it.options?.length || 0);
+              return (
+                <div key={`${r.id}-${it.id}-${idx}`} className="flex flex-wrap items-center gap-2 text-sm">
+                  <span className="font-medium">{name}</span>
+                  <span className="text-gray-500">(ID: {it.item_id})</span>
+                  <span>• Qty {it.quantity_min}-{it.quantity_max}</span>
+                  <span>• Drop {it.drop_rate.toFixed(1)}%</span>
+                  {optCount > 0 && (
+                    <span className="text-gray-500">• {optCount} opt</span>
+                  )}
+                </div>
+              );
+            })}
           </div>
         );
       },
     },
-    { title: 'Qty', key: 'qty', render: (_: any, r: MobRewardRow) => `${r.quantity_min}-${r.quantity_max}` },
-    { title: 'Drop %', dataIndex: 'drop_rate', render: (v: number) => `${v.toFixed(1)}%` },
     { title: 'Map', dataIndex: 'map_restriction', render: (v: string | null) => v ?? '-' },
     {
       title: 'Planet', dataIndex: 'gender_restriction', render: (v: number) => {
@@ -152,19 +184,7 @@ export default function MobRewardsListPage() {
         return String(v);
       }
     },
-    {
-      title: 'Option', key: 'option', render: (_: any, r: MobRewardRow) => {
-        const name = optionNameById.get(r.option_id);
-        return name
-          ? (
-            <div className="flex flex-col">
-              <span>{name}</span>
-              <span className="text-xs text-gray-500">ID: {r.option_id} • Param: {r.option_level}</span>
-            </div>
-          )
-          : `${r.option_id}:${r.option_level}`;
-      }
-    },
+    // Keep legacy first-option info minimal; detailed options are summarized per item above
     { title: 'Active', dataIndex: 'is_active', render: (v: boolean) => v ? <Tag color="green">Active</Tag> : <Tag>Inactive</Tag> },
     {
       title: 'Actions', key: 'actions', render: (_: any, r: MobRewardRow) => (

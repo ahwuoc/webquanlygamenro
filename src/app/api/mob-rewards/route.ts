@@ -47,6 +47,7 @@ export async function GET(request: NextRequest) {
       return {
         id: g.id,
         mob_id: g.mob_id,
+        // Backward-compatible flattened fields (first item only)
         item_id: firstItem?.item_id ?? 0,
         quantity_min: firstItem?.quantity_min ?? 1,
         quantity_max: firstItem?.quantity_max ?? 1,
@@ -58,7 +59,15 @@ export async function GET(request: NextRequest) {
         is_active: g.is_active,
         created_at: g.created_at,
         updated_at: g.updated_at,
-        // Extra info for future UI
+        // New: full items for this group
+        items: g.mob_reward_items.map((it: any) => ({
+          id: it.id,
+          item_id: it.item_id,
+          quantity_min: it.quantity_min,
+          quantity_max: it.quantity_max,
+          drop_rate: it.drop_rate,
+          options: (it.mob_reward_item_options || []).map((op: any) => ({ id: op.id, option_id: op.option_id, param: op.param })),
+        })),
         _items_count: g.mob_reward_items.length,
       };
     });
