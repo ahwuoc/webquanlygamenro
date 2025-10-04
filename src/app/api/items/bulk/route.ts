@@ -15,9 +15,8 @@ export async function PUT(request: NextRequest) {
             return NextResponse.json({ error: 'Updates object is required' }, { status: 400 });
         }
 
-        // Build update data object, only include fields that are provided
         const updateData: any = {};
-        
+
         if (updates.TYPE !== undefined) updateData.TYPE = Number(updates.TYPE);
         if (updates.part !== undefined) updateData.part = Number(updates.part);
         if (updates.gender !== undefined) updateData.gender = Number(updates.gender);
@@ -46,9 +45,9 @@ export async function PUT(request: NextRequest) {
             data: updateData
         });
 
-        return NextResponse.json({ 
+        return NextResponse.json({
             message: `Successfully updated ${result.count} items`,
-            updatedCount: result.count 
+            updatedCount: result.count
         });
     } catch (error) {
         console.error('Error bulk updating items:', error);
@@ -74,9 +73,9 @@ export async function DELETE(request: NextRequest) {
             }
         });
 
-        return NextResponse.json({ 
+        return NextResponse.json({
             message: `Successfully deleted ${result.count} items`,
-            deletedCount: result.count 
+            deletedCount: result.count
         });
     } catch (error) {
         console.error('Error bulk deleting items:', error);

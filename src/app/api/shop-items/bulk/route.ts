@@ -21,36 +21,33 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'No valid item IDs provided' }, { status: 400 });
     }
 
-    // Build update data object
     const updateData: any = {};
-    
+
     if (updates.type_sell !== undefined && updates.type_sell !== '') {
       updateData.type_sell = Number(updates.type_sell);
     }
-    
+
     if (updates.cost !== undefined && updates.cost !== '') {
       updateData.cost = Number(updates.cost);
     }
-    
+
     if (updates.is_new !== undefined) {
       updateData.is_new = Boolean(updates.is_new);
     }
-    
+
     if (updates.is_sell !== undefined) {
       updateData.is_sell = Boolean(updates.is_sell);
     }
 
-    // If temp_id is being updated, we need to handle icon_spec
     if (updates.temp_id !== undefined && updates.temp_id !== '') {
       const tempId = Number(updates.temp_id);
       updateData.temp_id = tempId;
-      
-      // Get the template to update icon_spec
-      const template = await prisma.item_template.findUnique({ 
+
+      const template = await prisma.item_template.findUnique({
         where: { id: tempId },
         select: { icon_id: true }
       });
-      
+
       if (template) {
         updateData.icon_spec = template.icon_id;
       }

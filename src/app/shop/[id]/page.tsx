@@ -38,7 +38,7 @@ export default function ShopDetailPage() {
   // Options management state
   const [optModalOpen, setOptModalOpen] = useState(false);
   const [optItemId, setOptItemId] = useState<number | null>(null);
-  const { data: optionTemplates } = useSWR('/api/item-options', fetcher);
+  const { data: optionTemplates } = useSWR('/api/item-options?limit=all', fetcher);
   const { data: itemOptions, mutate: mutateItemOptions } = useSWR(
     optItemId ? `/api/shop-item-options?item_shop_id=${optItemId}` : null,
     fetcher
@@ -265,10 +265,10 @@ export default function ShopDetailPage() {
 
   const saveBulkEdit = async () => {
     if (selectedItems.length === 0) return;
-    
+
     try {
       const updates: any = {};
-      
+
       if (bulkTempId) updates.temp_id = bulkTempId;
       if (bulkTypeSell) updates.type_sell = bulkTypeSell;
       if (bulkCost !== '') updates.cost = bulkCost;
@@ -290,7 +290,6 @@ export default function ShopDetailPage() {
         message.success(`Cập nhật thành công ${result.updated_count} items!`);
         setBulkEditOpen(false);
         setSelectedItems([]);
-        // Reset form
         setBulkTempId('');
         setBulkTypeSell('');
         setBulkCost('');
@@ -444,7 +443,7 @@ export default function ShopDetailPage() {
                   <thead className="[&_tr]:border-b">
                     <tr className="border-b">
                       <th className="h-10 px-2 text-left align-middle font-medium">
-                        <Checkbox 
+                        <Checkbox
                           checked={selectedItems.length === (itemData?.items || []).length && (itemData?.items || []).length > 0}
                           indeterminate={selectedItems.length > 0 && selectedItems.length < (itemData?.items || []).length}
                           onChange={(e) => handleSelectAll(e.target.checked)}
@@ -466,7 +465,7 @@ export default function ShopDetailPage() {
                     {(itemData?.items || []).map((it: any) => (
                       <tr key={it.id} className="hover:bg-muted/50 border-b transition-colors">
                         <td className="p-2 align-middle">
-                          <Checkbox 
+                          <Checkbox
                             checked={selectedItems.includes(it.id)}
                             onChange={(e) => handleSelectItem(it.id, e.target.checked)}
                           />
@@ -516,7 +515,7 @@ export default function ShopDetailPage() {
                   value={newOptionId || undefined}
                   onChange={(v) => setNewOptionId(String(v))}
                   placeholder="Chọn Option"
-                  options={(optionTemplates || []).map((o: any) => ({ label: `${o.NAME} (#${o.id})`, value: String(o.id) }))}
+                  options={(Array.isArray(optionTemplates) ? optionTemplates : (optionTemplates?.items || [])).map((o: any) => ({ label: `${o.NAME} (#${o.id})`, value: String(o.id) }))}
                   style={{ width: '100%' }}
                 />
               </div>
