@@ -273,7 +273,13 @@ export default function RequirementsManager({ taskMainId }: { taskMainId: number
               />
             </Form.Item>
             <Form.Item name="target_id" label="Target ID" rules={[{ required: true, message: 'Nhập target_id' }]}>
-              {targetOptions.length > 0 ? (
+              {!requirementType ? (
+                <Input
+                  placeholder="Vui lòng chọn Loại Requirement trước"
+                  disabled
+                  style={{ width: '100%' }}
+                />
+              ) : targetOptions.length > 0 ? (
                 <Select
                   placeholder={templatesLoading ? 'Đang tải...' : 'Chọn Target theo loại'}
                   loading={templatesLoading}
@@ -286,7 +292,10 @@ export default function RequirementsManager({ taskMainId }: { taskMainId: number
                   }
                 />
               ) : (
-                <InputNumber style={{ width: '100%' }} />
+                <InputNumber
+                  style={{ width: '100%' }}
+                  placeholder="Nhập Target ID thủ công"
+                />
               )}
             </Form.Item>
             <Form.Item name="target_count" label="Target Count">

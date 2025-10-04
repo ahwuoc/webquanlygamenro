@@ -28,7 +28,7 @@ export default function RequirementEditPage() {
     const params = useParams();
     const taskId = parseInt(params?.id as string || '0');
     const reqId = parseInt(params?.reqId as string || '0');
-    const { getDisplayName } = useTemplateMapping();
+    const { templates, loading: templatesLoading, getDisplayName } = useTemplateMapping();
 
     const [loading, setLoading] = useState(true);
     const [requirement, setRequirement] = useState<Requirement | null>(null);
@@ -37,6 +37,41 @@ export default function RequirementEditPage() {
     const [saving, setSaving] = useState(false);
     const [existingSubIds, setExistingSubIds] = useState<number[]>([]);
     const [taskInfo, setTaskInfo] = useState<{ id: number; NAME: string; detail: string } | null>(null);
+
+    const requirementType = Form.useWatch('requirement_type', form);
+
+    // Generate target options based on requirement type
+    const targetOptions = React.useMemo(() => {
+        if (!templates || !requirementType) return [] as { label: string; value: number }[];
+        let list: { id: number; NAME: string }[] = [];
+        switch (requirementType) {
+            case 'TALK_NPC':
+                list = templates.npcs || [];
+                break;
+            case 'KILL_MOB':
+                list = templates.mobs || [];
+                break;
+            case 'KILL_BOSS':
+                list = templates.bosses || [];
+                break;
+            case 'PICK_ITEM':
+            case 'USE_ITEM':
+                list = templates.items || [];
+                break;
+            case 'GO_TO_MAP':
+                list = templates.maps || [];
+                break;
+            default:
+                list = [];
+        }
+        return list.map((x) => ({ label: `${x.NAME} (#${x.id})`, value: x.id }));
+    }, [templates, requirementType]);
+
+    React.useEffect(() => {
+        if (isEditing) {
+            form.setFieldsValue({ target_id: undefined });
+        }
+    }, [requirementType, form, isEditing]);
 
     useEffect(() => {
         const fetchRequirement = async () => {
@@ -331,7 +366,26 @@ export default function RequirementEditPage() {
                                         <br />
                                         {isEditing ? (
                                             <Form.Item name="target_id" style={{ margin: 0 }}>
-                                                <InputNumber min={0} style={{ width: '100%' }} />
+                                                {targetOptions.length > 0 ? (
+                                                    <Select
+                                                        placeholder={templatesLoading ? 'Đang tải...' : 'Chọn Target theo loại'}
+                                                        loading={templatesLoading}
+                                                        showSearch
+                                                        allowClear
+                                                        optionFilterProp="label"
+                                                        options={targetOptions}
+                                                        filterOption={(input, option) =>
+                                                            (option?.label as string)?.toLowerCase().includes(input.toLowerCase())
+                                                        }
+                                                        style={{ width: '100%' }}
+                                                    />
+                                                ) : (
+                                                    <InputNumber
+                                                        min={0}
+                                                        style={{ width: '100%' }}
+                                                        placeholder="Nhập Target ID thủ công"
+                                                    />
+                                                )}
                                             </Form.Item>
                                         ) : (
                                             <div>

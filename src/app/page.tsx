@@ -7,12 +7,12 @@ export default async function Home() {
   let tableCount = 0;
   let accountCount = 0;
   let taskCount = 0;
-  let bossesWithRewards: Array<{
+  let _bossesWithRewards: Array<{
     id: number;
     name: string;
     rewards: Array<{ item_id: number; quantity: number; drop_rate: number; option_count: number }>
   }> = [];
-  let itemNameById = new Map<number, string>();
+  let _itemNameById = new Map<number, string>();
 
   try {
     await prisma.$connect();
@@ -51,10 +51,10 @@ export default async function Home() {
         where: { id: { in: itemIds } },
         select: { id: true, NAME: true },
       });
-      itemNameById = new Map(items.map(it => [it.id, it.NAME]));
+      _itemNameById = new Map(items.map(it => [it.id, it.NAME]));
     }
 
-    bossesWithRewards = bosses.map(b => ({
+    _bossesWithRewards = bosses.map(b => ({
       id: b.id,
       name: b.name,
       rewards: b.boss_rewards.map(r => ({
