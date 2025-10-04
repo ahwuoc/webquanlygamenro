@@ -7,6 +7,12 @@ export default async function Home() {
   let tableCount = 0;
   let accountCount = 0;
   let taskCount = 0;
+  let bossesWithRewards: Array<{
+    id: number;
+    name: string;
+    rewards: Array<{ item_id: number; quantity: number; drop_rate: number; option_count: number }>
+  }> = [];
+  let itemNameById = new Map<number, string>();
 
   try {
     await prisma.$connect();
@@ -20,6 +26,44 @@ export default async function Home() {
 
     // Get task count
     taskCount = await prisma.task_main_template.count();
+
+    // Fetch bosses with their rewards
+    const bosses = await prisma.bosses.findMany({
+      where: { is_active: true },
+      orderBy: { id: 'asc' },
+      include: {
+        boss_rewards: {
+          orderBy: { id: 'asc' },
+          include: {
+            boss_reward_item_options: true,
+          },
+        },
+      },
+    });
+
+    // Collect unique item ids
+    const itemIds = Array.from(new Set(
+      bosses.flatMap(b => b.boss_rewards.map(r => r.item_id))
+    ));
+
+    if (itemIds.length > 0) {
+      const items = await prisma.item_template.findMany({
+        where: { id: { in: itemIds } },
+        select: { id: true, NAME: true },
+      });
+      itemNameById = new Map(items.map(it => [it.id, it.NAME]));
+    }
+
+    bossesWithRewards = bosses.map(b => ({
+      id: b.id,
+      name: b.name,
+      rewards: b.boss_rewards.map(r => ({
+        item_id: r.item_id,
+        quantity: r.quantity,
+        drop_rate: r.drop_rate,
+        option_count: (r.boss_reward_item_options || []).length,
+      })),
+    }));
   } catch (error) {
     console.error("Database connection error:", error);
     dbStatus = "Error";

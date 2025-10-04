@@ -42,7 +42,8 @@ export default async function BossListPage({ searchParams }: BossListPageProps) 
             },
             include: {
                 boss_rewards: {
-                    take: 1,
+                    orderBy: { id: 'asc' },
+                    include: { boss_reward_item_options: true },
                 },
                 boss_skills: {
                     take: 1,
@@ -54,6 +55,16 @@ export default async function BossListPage({ searchParams }: BossListPageProps) 
         }),
         prisma.bosses.count({ where }),
     ]);
+
+    const itemIds = Array.from(new Set(bosses.flatMap(b => b.boss_rewards.map(r => r.item_id))));
+    const itemNameById = new Map<number, string>();
+    if (itemIds.length > 0) {
+        const items = await prisma.item_template.findMany({
+            where: { id: { in: itemIds } },
+            select: { id: true, NAME: true },
+        });
+        for (const it of items) itemNameById.set(it.id, it.NAME);
+    }
 
     const totalPages = Math.ceil(totalCount / limit);
 
@@ -71,6 +82,7 @@ export default async function BossListPage({ searchParams }: BossListPageProps) 
                     </div>
                 </div>
 
+
                 {/* Filters */}
                 <Card className="mb-8" title="Bộ Lọc" extra={<span className="text-sm text-gray-500">Tìm kiếm và lọc boss theo điều kiện</span>}>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -79,6 +91,7 @@ export default async function BossListPage({ searchParams }: BossListPageProps) 
                             <Input
                                 placeholder="Nhập tên boss..."
                                 defaultValue={search}
+                                allowClear
                             />
                         </div>
                         <div className="space-y-2">
@@ -100,11 +113,12 @@ export default async function BossListPage({ searchParams }: BossListPageProps) 
                     </div>
                 </Card>
 
+
                 {/* Boss Table */}
                 <Card title="Danh sách Boss" extra={<span className="text-sm text-gray-500">Hiển thị {offset + 1} đến {Math.min(offset + limit, totalCount)} trong {totalCount} kết quả</span>}>
                     <div className="relative w-full overflow-x-auto">
                         <table className="w-full caption-bottom text-sm">
-                            <thead className="[&_tr]:border-b">
+                            <thead className="sticky top-0 z-10 bg-white">
                                 <tr className="border-b">
                                     <th className="h-10 px-2 text-left align-middle font-medium">ID</th>
                                     <th className="h-10 px-2 text-left align-middle font-medium">Tên Boss</th>
@@ -116,14 +130,26 @@ export default async function BossListPage({ searchParams }: BossListPageProps) 
                                     <th className="h-10 px-2 text-left align-middle font-medium">Hành Động</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody className="[&>tr:nth-child(even)]:bg-gray-50">
                                 {bosses.map((boss) => (
-                                    <tr key={boss.id} className="hover:bg-muted/50 border-b transition-colors">
+                                    <tr key={boss.id} className="border-b hover:bg-gray-100 transition-colors">
                                         <td className="p-2 align-middle font-medium">{boss.id}</td>
                                         <td className="p-2 align-middle">
                                             <div>
-                                                <div className="font-medium">{boss.name}</div>
-                                                <div className="text-sm text-muted-foreground">
+                                                <div className="font-medium truncate max-w-[280px]">{boss.name}</div>
+                                                {boss.boss_rewards.length > 0 && (
+                                                    <div className="mt-1 flex flex-wrap gap-1">
+                                                        {boss.boss_rewards.slice(0, 4).map((rw, idx) => (
+                                                            <span key={`${boss.id}-rw-${idx}`} className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700 border border-gray-200">
+                                                                {itemNameById.get(rw.item_id) || `Item #${rw.item_id}`} · SL {rw.quantity} · {rw.drop_rate.toFixed(1)}%
+                                                            </span>
+                                                        ))}
+                                                        {boss.boss_rewards.length > 4 && (
+                                                            <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700 border border-gray-200">+{boss.boss_rewards.length - 4} nữa</span>
+                                                        )}
+                                                    </div>
+                                                )}
+                                                <div className="text-xs text-gray-500 mt-1">
                                                     {boss.boss_rewards.length} phần thưởng, {boss.boss_skills.length} kỹ năng
                                                 </div>
                                             </div>
@@ -139,7 +165,6 @@ export default async function BossListPage({ searchParams }: BossListPageProps) 
                                         <td className="p-2 align-middle">{new Date(boss.created_at).toLocaleDateString('vi-VN')}</td>
                                         <td className="p-2 align-middle">
                                             <div className="flex space-x-2">
-                                                <Button size="small" href={`/boss/${boss.id}`}>Xem</Button>
                                                 <Button size="small" href={`/boss/${boss.id}/edit`}>Sửa</Button>
                                                 <Button size="small" danger>Xóa</Button>
                                             </div>
@@ -153,7 +178,7 @@ export default async function BossListPage({ searchParams }: BossListPageProps) 
                     {/* Pagination */}
                     {totalPages > 1 && (
                         <div className="mt-6 flex items-center justify-between">
-                            <div className="text-sm text-muted-foreground">
+                            <div className="text-sm text-gray-500">
                                 Hiển thị {offset + 1} đến {Math.min(offset + limit, totalCount)} trong {totalCount} kết quả
                             </div>
                             <div className="flex space-x-2">
