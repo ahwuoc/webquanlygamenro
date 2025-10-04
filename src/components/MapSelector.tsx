@@ -47,29 +47,41 @@ export default function MapSelector({ value, onChange, error }: MapSelectorProps
         // Parse initial value
         try {
             const parsedValue = JSON.parse(value || '{}');
-            console.log('MapSelector parsing value:', value, 'parsed:', parsedValue);
+            if (process.env.NODE_ENV !== 'production') {
+                console.log('MapSelector parsing value:', value, 'parsed:', parsedValue);
+            }
 
             // Handle different formats
             if (parsedValue.map_ids && Array.isArray(parsedValue.map_ids)) {
                 // Format: {map_ids: [1, 2, 3], selected_count: 3}
-                console.log('Using map_ids format:', parsedValue.map_ids);
+                if (process.env.NODE_ENV !== 'production') {
+                    console.log('Using map_ids format:', parsedValue.map_ids);
+                }
                 setSelectedMaps(parsedValue.map_ids);
             } else if (Array.isArray(parsedValue)) {
                 // Format: [1, 2, 3]
-                console.log('Using array format:', parsedValue);
+                if (process.env.NODE_ENV !== 'production') {
+                    console.log('Using array format:', parsedValue);
+                }
                 setSelectedMaps(parsedValue);
             } else if (typeof parsedValue === 'object' && parsedValue !== null) {
                 // Try to find any array in the object
                 const arrayValues = Object.values(parsedValue).filter(val => Array.isArray(val));
                 if (arrayValues.length > 0) {
-                    console.log('Using object array format:', arrayValues[0]);
+                    if (process.env.NODE_ENV !== 'production') {
+                        console.log('Using object array format:', arrayValues[0]);
+                    }
                     setSelectedMaps(arrayValues[0] as number[]);
                 } else {
-                    console.log('No array found in object, setting empty');
+                    if (process.env.NODE_ENV !== 'production') {
+                        console.log('No array found in object, setting empty');
+                    }
                     setSelectedMaps([]);
                 }
             } else {
-                console.log('Unknown format, setting empty');
+                if (process.env.NODE_ENV !== 'production') {
+                    console.log('Unknown format, setting empty');
+                }
                 setSelectedMaps([]);
             }
         } catch (error) {
@@ -83,7 +95,9 @@ export default function MapSelector({ value, onChange, error }: MapSelectorProps
             ? selectedMaps.filter(id => id !== mapId)
             : [...selectedMaps, mapId];
 
-        console.log('MapSelector toggle:', mapId, 'new selected:', newSelectedMaps);
+        if (process.env.NODE_ENV !== 'production') {
+            console.log('MapSelector toggle:', mapId, 'new selected:', newSelectedMaps);
+        }
         setSelectedMaps(newSelectedMaps);
         const newValue = JSON.stringify(newSelectedMaps);
         onChange(newValue);
@@ -104,7 +118,9 @@ export default function MapSelector({ value, onChange, error }: MapSelectorProps
         map.NAME.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    console.log('MapSelector state:', { selectedMaps, filteredMaps: filteredMaps.length, totalMaps: maps.length });
+    if (process.env.NODE_ENV !== 'production') {
+        console.log('MapSelector state:', { selectedMaps, filteredMaps: filteredMaps.length, totalMaps: maps.length });
+    }
 
     const getPlanetName = (planetId: number) => {
         switch (planetId) {

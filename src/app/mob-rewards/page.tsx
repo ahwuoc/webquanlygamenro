@@ -41,7 +41,6 @@ export default function MobRewardsListPage() {
   const [active, setActive] = useState<'all' | '1' | '0'>('all');
   const [mobs, setMobs] = useState<{ id: number; NAME: string }[]>([]);
   const [items, setItems] = useState<{ id: number; NAME: string }[]>([]);
-  const [optionTemplates, setOptionTemplates] = useState<{ id: number; NAME: string }[]>([]);
   const [loadingMeta, setLoadingMeta] = useState(true);
 
   const fetchData = async () => {
@@ -73,10 +72,9 @@ export default function MobRewardsListPage() {
     const loadMeta = async () => {
       try {
         setLoadingMeta(true);
-        const [mobsRes, itemsRes, optsRes] = await Promise.all([
+        const [mobsRes, itemsRes] = await Promise.all([
           fetch('/api/mobs?limit=all'),
           fetch('/api/items?limit=all'),
-          fetch('/api/item-options'),
         ]);
         if (!cancelled) {
           if (mobsRes.ok) {
@@ -91,10 +89,7 @@ export default function MobRewardsListPage() {
               setItems(it.items);
             }
           }
-          if (optsRes.ok) {
-            const opts = await optsRes.json();
-            if (Array.isArray(opts)) setOptionTemplates(opts);
-          }
+          // removed unused option templates fetch
         }
       } finally {
         if (!cancelled) setLoadingMeta(false);
@@ -116,11 +111,6 @@ export default function MobRewardsListPage() {
     for (const x of items) m.set(x.id, x.NAME);
     return m;
   }, [items]);
-  const optionNameById = useMemo(() => {
-    const m = new Map<number, string>();
-    for (const x of optionTemplates) m.set(x.id, x.NAME);
-    return m;
-  }, [optionTemplates]);
 
   const columns = useMemo(() => [
     { title: 'ID', dataIndex: 'id', width: 80 },
@@ -144,15 +134,15 @@ export default function MobRewardsListPage() {
         const items = Array.isArray(r.items) && r.items.length > 0
           ? r.items
           : [
-              {
-                id: -1,
-                item_id: r.item_id,
-                quantity_min: r.quantity_min,
-                quantity_max: r.quantity_max,
-                drop_rate: r.drop_rate,
-                options: r.option_id || r.option_level ? [{ id: -1, option_id: r.option_id, param: r.option_level }] : [],
-              },
-            ];
+            {
+              id: -1,
+              item_id: r.item_id,
+              quantity_min: r.quantity_min,
+              quantity_max: r.quantity_max,
+              drop_rate: r.drop_rate,
+              options: r.option_id || r.option_level ? [{ id: -1, option_id: r.option_id, param: r.option_level }] : [],
+            },
+          ];
         return (
           <div className="space-y-1">
             {items.map((it, idx) => {
@@ -193,7 +183,7 @@ export default function MobRewardsListPage() {
         </div>
       )
     },
-  ], [itemNameById, mobNameById, optionNameById]);
+  ], [itemNameById, mobNameById]);
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">

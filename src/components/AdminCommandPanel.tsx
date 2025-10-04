@@ -1,26 +1,26 @@
 "use client";
 
 import React, { useState } from "react";
-import { 
-  Card, 
-  Button, 
-  Space, 
-  Form, 
-  Input, 
-  InputNumber, 
-  message, 
-  Typography, 
-  Row, 
-  Col, 
+import {
+  Card,
+  Button,
+  Space,
+  Form,
+  Input,
+  InputNumber,
+  message,
+  Typography,
+  Row,
+  Col,
   Divider,
   Alert,
   Modal,
   Tabs
 } from "antd";
-import { 
-  PlayCircleOutlined, 
-  ReloadOutlined, 
-  SoundOutlined, 
+import {
+  PlayCircleOutlined,
+  ReloadOutlined,
+  SoundOutlined,
   SettingOutlined,
   DatabaseOutlined,
   ClusterOutlined,
@@ -37,7 +37,7 @@ import {
 import { adminService } from "@/lib/api/admin.service";
 import AdminServerConfig from "./AdminServerConfig";
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Paragraph } = Typography;
 const { TextArea } = Input;
 
 interface CommandResult {
@@ -64,7 +64,7 @@ export default function AdminCommandPanel() {
       setLoading(commandName);
       const result = await commandFn();
       addResult(result);
-      
+
       if (result.success) {
         // Check if it's a warning response
         if (result.error === 'Warning') {
@@ -99,8 +99,8 @@ export default function AdminCommandPanel() {
           message.error(`❌ ${commandName} failed: ${result.message}`);
         }
       }
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+    } catch (_error) {
+      const errorMsg = _error instanceof Error ? _error.message : 'Unknown error';
       addResult({
         success: false,
         message: errorMsg,
@@ -134,7 +134,7 @@ export default function AdminCommandPanel() {
       okText: 'Bắt đầu bảo trì',
       okType: 'danger',
       cancelText: 'Hủy',
-      onOk: () => executeCommand('Server Maintenance', () => 
+      onOk: () => executeCommand('Server Maintenance', () =>
         adminService.startMaintenance(values.minutes)
       ),
     });
@@ -148,14 +148,14 @@ export default function AdminCommandPanel() {
       okText: 'Bắt đầu restart',
       okType: 'danger',
       cancelText: 'Hủy',
-      onOk: () => executeCommand('Server Restart', () => 
+      onOk: () => executeCommand('Server Restart', () =>
         adminService.restartServer(values.minutes)
       ),
     });
   };
 
   const handleCustomCommand = async (values: { command: string; data?: string }) => {
-    await executeCommand(`Custom: ${values.command}`, () => 
+    await executeCommand(`Custom: ${values.command}`, () =>
       adminService.sendCustomCommand(values.command, values.data)
     );
     customForm.resetFields();
@@ -166,7 +166,7 @@ export default function AdminCommandPanel() {
     try {
       // Kiểm tra trạng thái server trước
       const statusResult = await adminService.getGameServerStatus();
-      
+
       if (statusResult.success) {
         let statusData;
         try {
@@ -175,13 +175,13 @@ export default function AdminCommandPanel() {
           // Nếu không parse được JSON, coi như server đã tắt
           statusData = { running: false };
         }
-        
+
         if (statusData.running && statusData.pid > 0) {
           message.warning(`⚠️ Game server đã chạy rồi (PID: ${statusData.pid}). Không cần start.`);
           return;
         }
       }
-      
+
       Modal.confirm({
         title: 'Khởi động Game Server',
         content: 'Bạn có chắc muốn khởi động game server?',
@@ -191,8 +191,7 @@ export default function AdminCommandPanel() {
         cancelText: 'Hủy',
         onOk: () => executeCommand('Start Game Server', () => adminService.startGameServer()),
       });
-    } catch (error) {
-      // Nếu không kiểm tra được status, vẫn cho phép start
+    } catch {
       Modal.confirm({
         title: 'Khởi động Game Server',
         content: 'Không thể kiểm tra trạng thái server. Bạn có chắc muốn khởi động game server?',
@@ -209,7 +208,7 @@ export default function AdminCommandPanel() {
     try {
       // Kiểm tra trạng thái server trước
       const statusResult = await adminService.getGameServerStatus();
-      
+
       if (statusResult.success) {
         let statusData;
         try {
@@ -218,13 +217,13 @@ export default function AdminCommandPanel() {
           // Nếu không parse được JSON, coi như server đang chạy
           statusData = { running: true };
         }
-        
+
         if (!statusData.running) {
           message.warning('⚠️ Game server đã tắt rồi (PID: -1). Không cần stop.');
           return;
         }
       }
-      
+
       Modal.confirm({
         title: 'Dừng Game Server',
         content: 'Bạn có chắc muốn dừng game server? Tất cả người chơi sẽ bị ngắt kết nối.',
@@ -234,7 +233,7 @@ export default function AdminCommandPanel() {
         cancelText: 'Hủy',
         onOk: () => executeCommand('Stop Game Server', () => adminService.stopGameServer()),
       });
-    } catch (error) {
+    } catch {
       // Nếu không kiểm tra được status, vẫn cho phép stop
       Modal.confirm({
         title: 'Dừng Game Server',
@@ -256,7 +255,7 @@ export default function AdminCommandPanel() {
       okText: 'Restart Server',
       okType: 'danger',
       cancelText: 'Hủy',
-      onOk: () => executeCommand('Restart Game Server', () => 
+      onOk: () => executeCommand('Restart Game Server', () =>
         adminService.restartGameServer(values.delaySeconds)
       ),
     });
@@ -283,29 +282,29 @@ export default function AdminCommandPanel() {
       children: (
         <Card title="Thông tin Server" size="small">
           <Space wrap>
-            <Button 
-              type="primary" 
+            <Button
+              type="primary"
               icon={<PlayCircleOutlined />}
               loading={isLoading('Server Status')}
               onClick={() => executeCommand('Server Status', () => adminService.getStatus())}
             >
               Server Status
             </Button>
-            <Button 
+            <Button
               icon={<PlayCircleOutlined />}
               loading={isLoading('Player Count')}
               onClick={() => executeCommand('Player Count', () => adminService.getPlayerCount())}
             >
               Player Count
             </Button>
-            <Button 
+            <Button
               icon={<PlayCircleOutlined />}
               loading={isLoading('Thread Count')}
               onClick={() => executeCommand('Thread Count', () => adminService.getThreadCount())}
             >
               Thread Count
             </Button>
-            <Button 
+            <Button
               icon={<PlayCircleOutlined />}
               loading={isLoading('GameLoop Stats')}
               onClick={() => executeCommand('GameLoop Stats', () => adminService.getGameLoopStats())}
@@ -324,7 +323,7 @@ export default function AdminCommandPanel() {
           <Col xs={24} md={8}>
             <Card title="Server Control" size="small">
               <Space direction="vertical" style={{ width: '100%' }}>
-                <Button 
+                <Button
                   type="primary"
                   icon={<PlayCircleOutlined />}
                   loading={isLoading('Start Game Server')}
@@ -333,7 +332,7 @@ export default function AdminCommandPanel() {
                 >
                   Start Game Server
                 </Button>
-                <Button 
+                <Button
                   danger
                   icon={<PoweroffOutlined />}
                   loading={isLoading('Stop Game Server')}
@@ -349,16 +348,16 @@ export default function AdminCommandPanel() {
             <Card title="Server Restart" size="small">
               <Form onFinish={handleRestartGameServer} layout="vertical">
                 <Form.Item name="delaySeconds" label="Delay (giây)">
-                  <InputNumber 
-                    min={5} 
-                    max={300} 
+                  <InputNumber
+                    min={5}
+                    max={300}
                     placeholder="10 (mặc định)"
                     style={{ width: '100%' }}
                   />
                 </Form.Item>
                 <Form.Item>
-                  <Button 
-                    type="primary" 
+                  <Button
+                    type="primary"
                     danger
                     htmlType="submit"
                     icon={<RedoOutlined />}
@@ -374,7 +373,7 @@ export default function AdminCommandPanel() {
           <Col xs={24} md={8}>
             <Card title="Monitoring & Emergency" size="small">
               <Space direction="vertical" style={{ width: '100%' }}>
-                <Button 
+                <Button
                   type="primary"
                   icon={<HeartOutlined />}
                   loading={isLoading('Health Check')}
@@ -383,7 +382,7 @@ export default function AdminCommandPanel() {
                 >
                   Health Check
                 </Button>
-                <Button 
+                <Button
                   icon={<InfoCircleOutlined />}
                   loading={isLoading('Game Server Status')}
                   onClick={() => executeCommand('Game Server Status', () => adminService.getGameServerStatus())}
@@ -391,7 +390,7 @@ export default function AdminCommandPanel() {
                 >
                   Game Server Status
                 </Button>
-                <Button 
+                <Button
                   icon={<FileTextOutlined />}
                   loading={isLoading('Game Server Logs')}
                   onClick={() => executeCommand('Game Server Logs', () => adminService.getGameServerLogs(100))}
@@ -399,7 +398,7 @@ export default function AdminCommandPanel() {
                 >
                   View Logs (100 lines)
                 </Button>
-                <Button 
+                <Button
                   icon={<MonitorOutlined />}
                   loading={isLoading('Admin Server Status')}
                   onClick={() => executeCommand('Admin Server Status', () => adminService.getAdminServerStatus())}
@@ -408,7 +407,7 @@ export default function AdminCommandPanel() {
                   Admin Server Status
                 </Button>
                 <Divider style={{ margin: '8px 0' }} />
-                <Button 
+                <Button
                   danger
                   icon={<DeleteOutlined />}
                   loading={isLoading('Force Kill Game Server')}
@@ -430,7 +429,7 @@ export default function AdminCommandPanel() {
         <Row gutter={[16, 16]}>
           <Col xs={24} md={12}>
             <Card title="Lưu dữ liệu" size="small">
-              <Button 
+              <Button
                 type="primary"
                 icon={<DatabaseOutlined />}
                 loading={isLoading('Save Clan Data')}
@@ -444,7 +443,7 @@ export default function AdminCommandPanel() {
           <Col xs={24} md={12}>
             <Card title="Cache Management" size="small">
               <Space direction="vertical" style={{ width: '100%' }}>
-                <Button 
+                <Button
                   icon={<ReloadOutlined />}
                   loading={isLoading('Refresh Mob Cache')}
                   onClick={() => executeCommand('Refresh Mob Cache', () => adminService.refreshMobCache())}
@@ -452,7 +451,7 @@ export default function AdminCommandPanel() {
                 >
                   Refresh Mob Cache
                 </Button>
-                <Button 
+                <Button
                   icon={<ReloadOutlined />}
                   loading={isLoading('Refresh Boss Cache')}
                   onClick={() => executeCommand('Refresh Boss Cache', () => adminService.refreshBossCache())}
@@ -460,7 +459,7 @@ export default function AdminCommandPanel() {
                 >
                   Refresh Boss Cache
                 </Button>
-                <Button 
+                <Button
                   icon={<ReloadOutlined />}
                   loading={isLoading('Refresh Gift Cache')}
                   onClick={() => executeCommand('Refresh Gift Cache', () => adminService.refreshGiftCache())}
@@ -482,20 +481,20 @@ export default function AdminCommandPanel() {
           <Col xs={24} md={12}>
             <Card title="Global Announcement" size="small">
               <Form form={announcementForm} onFinish={handleAnnouncement} layout="vertical">
-                <Form.Item 
-                  name="message" 
+                <Form.Item
+                  name="message"
                   rules={[{ required: true, message: 'Nhập nội dung thông báo' }]}
                 >
-                  <TextArea 
-                    rows={3} 
+                  <TextArea
+                    rows={3}
                     placeholder="Nhập nội dung thông báo cho tất cả người chơi..."
                     maxLength={200}
                     showCount
                   />
                 </Form.Item>
                 <Form.Item>
-                  <Button 
-                    type="primary" 
+                  <Button
+                    type="primary"
                     htmlType="submit"
                     icon={<SoundOutlined />}
                     loading={isLoading('Global Announcement')}
@@ -510,20 +509,20 @@ export default function AdminCommandPanel() {
           <Col xs={24} md={12}>
             <Card title="VIP Announcement" size="small">
               <Form form={vipForm} onFinish={handleVipAnnouncement} layout="vertical">
-                <Form.Item 
-                  name="message" 
+                <Form.Item
+                  name="message"
                   rules={[{ required: true, message: 'Nhập nội dung thông báo VIP' }]}
                 >
-                  <TextArea 
-                    rows={3} 
+                  <TextArea
+                    rows={3}
                     placeholder="Nhập nội dung thông báo cho VIP..."
                     maxLength={200}
                     showCount
                   />
                 </Form.Item>
                 <Form.Item>
-                  <Button 
-                    type="primary" 
+                  <Button
+                    type="primary"
                     htmlType="submit"
                     icon={<SoundOutlined />}
                     loading={isLoading('VIP Announcement')}
@@ -545,25 +544,25 @@ export default function AdminCommandPanel() {
         <Row gutter={[16, 16]}>
           <Col xs={24} md={12}>
             <Card title="Server Maintenance" size="small">
-              <Alert 
-                message="Cảnh báo" 
-                description="Bảo trì sẽ thông báo cho players, lưu dữ liệu và tạm dừng server." 
-                type="warning" 
-                showIcon 
+              <Alert
+                message="Cảnh báo"
+                description="Bảo trì sẽ thông báo cho players, lưu dữ liệu và tạm dừng server."
+                type="warning"
+                showIcon
                 style={{ marginBottom: 16 }}
               />
               <Form onFinish={handleMaintenance} layout="vertical">
                 <Form.Item name="minutes" label="Thời gian bảo trì (phút)">
-                  <InputNumber 
-                    min={1} 
-                    max={60} 
+                  <InputNumber
+                    min={1}
+                    max={60}
                     placeholder="5 (mặc định)"
                     style={{ width: '100%' }}
                   />
                 </Form.Item>
                 <Form.Item>
-                  <Button 
-                    type="primary" 
+                  <Button
+                    type="primary"
                     danger
                     htmlType="submit"
                     icon={<SettingOutlined />}
@@ -578,25 +577,25 @@ export default function AdminCommandPanel() {
           </Col>
           <Col xs={24} md={12}>
             <Card title="Server Restart" size="small">
-              <Alert 
-                message="Nguy hiểm" 
-                description="Restart sẽ lưu dữ liệu và khởi động lại server hoàn toàn." 
-                type="error" 
-                showIcon 
+              <Alert
+                message="Nguy hiểm"
+                description="Restart sẽ lưu dữ liệu và khởi động lại server hoàn toàn."
+                type="error"
+                showIcon
                 style={{ marginBottom: 16 }}
               />
               <Form onFinish={handleRestart} layout="vertical">
                 <Form.Item name="minutes" label="Thời gian chờ trước khi restart (phút)">
-                  <InputNumber 
-                    min={1} 
-                    max={60} 
+                  <InputNumber
+                    min={1}
+                    max={60}
                     placeholder="5 (mặc định)"
                     style={{ width: '100%' }}
                   />
                 </Form.Item>
                 <Form.Item>
-                  <Button 
-                    type="primary" 
+                  <Button
+                    type="primary"
                     danger
                     htmlType="submit"
                     icon={<ReloadOutlined />}
@@ -622,16 +621,16 @@ export default function AdminCommandPanel() {
       label: <span><CodeOutlined />Custom Commands</span>,
       children: (
         <Card title="Custom Command" size="small">
-          <Alert 
-            message="Dành cho người dùng nâng cao" 
-            description="Gửi command tùy chỉnh đến admin server. Hãy cẩn thận khi sử dụng." 
-            type="info" 
-            showIcon 
+          <Alert
+            message="Dành cho người dùng nâng cao"
+            description="Gửi command tùy chỉnh đến admin server. Hãy cẩn thận khi sử dụng."
+            type="info"
+            showIcon
             style={{ marginBottom: 16 }}
           />
           <Form form={customForm} onFinish={handleCustomCommand} layout="vertical">
-            <Form.Item 
-              name="command" 
+            <Form.Item
+              name="command"
               label="Command"
               rules={[{ required: true, message: 'Nhập command' }]}
             >
@@ -641,8 +640,8 @@ export default function AdminCommandPanel() {
               <Input placeholder="Dữ liệu bổ sung cho command..." />
             </Form.Item>
             <Form.Item>
-              <Button 
-                type="primary" 
+              <Button
+                type="primary"
                 htmlType="submit"
                 icon={<CodeOutlined />}
                 loading={loading === 'Custom Command'}
@@ -675,12 +674,12 @@ export default function AdminCommandPanel() {
           <Card size="small">
             <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
               {results.map((result, index) => (
-                <div key={index} style={{ 
-                  padding: '8px', 
+                <div key={index} style={{
+                  padding: '8px',
                   borderBottom: index < results.length - 1 ? '1px solid #f0f0f0' : 'none',
                   fontSize: '12px'
                 }}>
-                  <div style={{ 
+                  <div style={{
                     color: result.success ? '#52c41a' : '#ff4d4f',
                     fontWeight: 'bold'
                   }}>

@@ -41,7 +41,7 @@ export default function AdminServerConfig() {
       }
 
       message.success('Đã lưu cấu hình server admin');
-    } catch (error) {
+    } catch {
       message.error('Lỗi khi lưu cấu hình');
     }
   };

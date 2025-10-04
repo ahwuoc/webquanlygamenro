@@ -32,7 +32,7 @@ export default function ItemsManagementPage() {
 
   // bulk edit state
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
-  const [selectedRows, setSelectedRows] = useState<ItemRow[]>([]);
+  const [_selectedRows, setSelectedRows] = useState<ItemRow[]>([]);
   const [bulkEditOpen, setBulkEditOpen] = useState(false);
   const [bulkForm] = Form.useForm();
   const [bulkSubmitting, setBulkSubmitting] = useState(false);
